@@ -4,30 +4,21 @@
 #include "commonfunctions.h"
 
 class TemporalGraph {
-
     private:
-
         int* L;
-
         int find(int u);
        
     public:
-
         // Edge: the structure of the edges in the temporal graph.
         struct Edge {
-
             // to: the destination of the edge.
             int to;
-
             // interaction_time: time of the interaction.
             int interaction_time;
-
             // next: the next edge in linked list structure.
             Edge* next;
-
             Edge(int v, int t, Edge* nextptr): to(v), interaction_time(t), next(nextptr) {}
             ~Edge() {}
-
         };
 
         // n: the number of vertices; m: the number of edges.
@@ -37,8 +28,20 @@ class TemporalGraph {
         // tmax: the maximum time of all temporal edges.
         int tmax;
 
-        // head_edge[vertex] --> the head edge from this vertex.
+        // degree: the out-degree of all vertices.
+        std::vector<int> degree;
+
+        // in_degree: the in-degree of all vertices.
+        std::vector<int> in_degree;
+
+        // edge_set: all edges.
+        std::vector<std::pair<std::pair<int, int>, int>> edge_set;
+
+        // head_edge[vertex] --> the head out-edge from this vertex.
         std::vector<Edge*> head_edge;
+
+        // inv_head_edge[vertex] --> the head in-edge from this vertex.
+        std::vector<Edge*> head_in_edge;
 
         // temporal_edge[t] --> the edge set at time t.
         std::vector<std::vector<std::pair<int, int>>> temporal_edge;
@@ -53,8 +56,11 @@ class TemporalGraph {
         // numOfEdges(): get the number of the edges in the graph.  
         int numOfEdges();
 
-        // getHeadEdge(u): get the head edge of vertex u.
+        // getHeadEdge(u): get the head out-edge of vertex u.
         Edge* getHeadEdge(int u);
+
+        // getHeadInEdge(u): get the head in-edge of vertex u.
+        Edge* getHeadInEdge(int u);
 
         // getNextEdge(e): get the next edge of edge e.
         Edge* getNextEdge(Edge* e);
@@ -78,7 +84,6 @@ class TemporalGraph {
         TemporalGraph(char* graph_file, char* graph_type);
         TemporalGraph(TemporalGraph* Graph, int ts, int te);
         ~TemporalGraph();
-
 };
 
 #endif
