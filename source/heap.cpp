@@ -53,6 +53,9 @@ int Heap::pop() {
     }
     int toReturn = heap[0].first;
     nodeMap.erase(heap[0].first);
+    if (size() == 0) {
+        return toReturn;
+    }
     nodeMap[heap[heap.size()-1].first] = 0;
     std::swap(heap[0], heap[heap.size()-1]);
     heap.pop_back();

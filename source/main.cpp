@@ -24,6 +24,11 @@ int main(int argc, char* argv[]) {
     std::cout << "Input k: ";
     std::cin >> k;
 
+    if (std::strcmp(argv[argc - 1], "Debug") == 0) {
+        debug = true;
+        argc--;
+    }
+
     unsigned long long start_time = currentTime();
 
     TemporalGraph* Graph = build(argv);
@@ -50,7 +55,7 @@ int main(int argc, char* argv[]) {
             std::cout << "Index construction completed in " << timeFormatting(difftime(index_construction_end_time, index_construction_start_time)).str() << std::endl;
             std::cout << "Solving queries..." << std::endl;
             unsigned long long query_start_time = currentTime();
-            index->solve(Graph, argv[i], argv[argc - 2]);
+            index->solve(Graph, argv[i], argv[argc - 2], k);
             unsigned long long query_end_time = currentTime();
             std::cout << "Query completed in " << timeFormatting(query_end_time - query_start_time).str() << std::endl;
             std::cout << "Index completed!" << std::endl;

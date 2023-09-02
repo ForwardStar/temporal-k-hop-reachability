@@ -9,6 +9,9 @@ bool cmp1(std::pair<int, int> i, std::pair<int, int> j) {
 }
 
 bool Index::reachable(TemporalGraph* G, int u, int v, int ts, int te, int k_input) {
+    if (u == v) {
+        return true;
+    }
     if (vertex_cover.find(u) == vertex_cover.end()) {
         if (vertex_cover.find(v) != vertex_cover.end()) {
             TemporalGraph::Edge* e = G->getHeadEdge(u);
@@ -43,11 +46,12 @@ bool Index::reachable(TemporalGraph* G, int u, int v, int ts, int te, int k_inpu
     }
     else {
         if (vertex_cover.find(v) != vertex_cover.end()) {
-            if (index[u].find(v) == index[u].end()) {
+            int i = inv_vertex_cover[u];
+            if (index[i].find(v) == index[i].end()) {
                 return false;
             }
-            for (int i = 0; i <= k_input - (k - 2); i++) {
-                for (auto it = index[u][v][i].begin(); it != index[u][v][i].end(); it++) {
+            for (int j = 0; j <= k_input - (k - 2); j++) {
+                for (auto it = index[i][v][j].begin(); it != index[i][v][j].end(); it++) {
                     int ts_index = *it / (G->tmax + 1);
                     int te_index = *it % (G->tmax + 1);
                     if (ts_index >= ts) {
@@ -89,7 +93,7 @@ Index::Index(TemporalGraph* G, int k_input) {
     for (int i = 0; i < Graph->edge_set.size(); i++) {
         int u = Graph->edge_set[i].first.first;
         int v = Graph->edge_set[i].first.second;
-        heap->insert(i, -Graph->degree[u] - Graph->degree[v]);
+        heap->insert(i, -(Graph->degree[u] + 1) * (Graph->in_degree[u] + 1) - (Graph->degree[v] + 1) * (Graph->in_degree[v] + 1));
     }
     while (heap->size() > 0) {
         int i = heap->pop();
@@ -103,13 +107,15 @@ Index::Index(TemporalGraph* G, int k_input) {
         vertex_cover.insert(u);
         vertex_cover.insert(v);
     }
+    std::cout << "Vertex cover size: " << vertex_cover.size() << std::endl;
     
     // Construct the index by vertex cover
     int i = 0;
+    unsigned long long start_time = currentTime();
     for (auto it = vertex_cover.begin(); it != vertex_cover.end(); it++) {
         int u = *it;
         inv_vertex_cover[u] = i++;
-        index.push_back(std::unordered_map<int, std::vector<std::set<int>>>());
+        index.push_back(std::unordered_map<int, std::vector<std::set<long long>>>());
         std::queue<std::vector<int>> Q;
         std::vector<int> start;
         start.push_back(u);
@@ -130,11 +136,11 @@ Index::Index(TemporalGraph* G, int k_input) {
                 int te = std::max(current[2], e->interaction_time);
                 if (vertex_cover.find(e->to) != vertex_cover.end()) {
                     if (index[i - 1].find(e->to) == index[i - 1].end()) {
-                        index[i - 1][e->to] = std::vector<std::set<int>>();
+                        index[i - 1][e->to] = std::vector<std::set<long long>>();
                         for (int j = 0; j < 3; j++) {
-                            index[i - 1][e->to].push_back(std::set<int>());
+                            index[i - 1][e->to].push_back(std::set<long long>());
                         }
-                        index[i - 1][e->to][std::max(k - 2, current[3] + 1) - (k - 2)].insert(ts * (Graph->tmax + 1) + te);
+                        index[i - 1][e->to][std::max(k - 2, current[3] + 1) - (k - 2)].insert((long long)ts * (Graph->tmax + 1) + te);
                         std::vector<int> next;
                         next.push_back(e->to);
                         next.push_back(ts);
@@ -145,7 +151,7 @@ Index::Index(TemporalGraph* G, int k_input) {
                     else {
                         bool flag = false;
                         int j = std::max(0, current[3] + 1 - (k - 2));
-                        for (auto it1 = index[i - 1][e->to][j].begin(); it1 != index[i - 1][e->to][j].end(); it1++) {
+                        for (auto it1 = index[i - 1][e->to][j].begin(); it1 != index[i - 1][e->to][j].end();) {
                             int ts_index = *it1 / (Graph->tmax + 1);
                             int te_index = *it1 % (Graph->tmax + 1);
                             if (ts_index >= ts && te_index <= te) {
@@ -155,9 +161,12 @@ Index::Index(TemporalGraph* G, int k_input) {
                             if (ts_index <= ts && te_index >= te) {
                                 it1 = index[i - 1][e->to][j].erase(it1);
                             }
+                            else {
+                                it1++;
+                            }
                         }
-                        if (flag) {
-                            index[i - 1][e->to][std::max(k - 2, current[3] + 1) - (k - 2)].insert(ts * (Graph->tmax + 1) + te);
+                        if (!flag) {
+                            index[i - 1][e->to][std::max(k - 2, current[3] + 1) - (k - 2)].insert((long long)ts * (Graph->tmax + 1) + te);
                             std::vector<int> next;
                             next.push_back(e->to);
                             next.push_back(ts);
@@ -178,18 +187,19 @@ Index::Index(TemporalGraph* G, int k_input) {
                 e = e->next;
             }
         }
+        putProcess(double(i) / vertex_cover.size(), currentTime() - start_time);
     }
 
     delete Graph;
 }
 
-void Index::solve(TemporalGraph* Graph, char* query_file, char* output_file) {
-    int s, t, ts, te, k;
+void Index::solve(TemporalGraph* Graph, char* query_file, char* output_file, int k) {
+    int s, t, ts, te;
     int query_num = 0;
     std::ifstream fin(query_file);
     std::ofstream fout(output_file);
 
-    while (fin >> s >> t >> ts >> te >> k) {
+    while (fin >> s >> t >> ts >> te) {
         ++query_num;
     }
 
@@ -197,7 +207,7 @@ void Index::solve(TemporalGraph* Graph, char* query_file, char* output_file) {
 
     int i = 0;
     unsigned long long start_time = currentTime();
-    while (fin >> s >> t >> ts >> te >> k) {
+    while (fin >> s >> t >> ts >> te) {
         // Perform online BFS Search
         if (reachable(Graph, s, t, ts, te, k)) {
             fout << "Reachable" << std::endl;

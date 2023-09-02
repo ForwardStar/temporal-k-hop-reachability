@@ -13,7 +13,7 @@ class Index {
         // index[inv_vertex_cover[i]][j]:
         //      it->first: shortest distance (k - 2, k - 1 or k) from i to j;
         //      it->second: corresponding minimal time interval of the shortest distance;
-        std::vector<std::unordered_map<int, std::vector<std::set<int>>>> index;
+        std::vector<std::unordered_map<int, std::vector<std::set<long long>>>> index;
         std::unordered_map<int, int> inv_vertex_cover;
 
         int k = 0;
@@ -24,5 +24,5 @@ class Index {
 
         Index(TemporalGraph* G, int k_input);
 
-        void solve(TemporalGraph* Graph, char* query_file, char* output_file);
+        void solve(TemporalGraph* Graph, char* query_file, char* output_file, int k);
 };

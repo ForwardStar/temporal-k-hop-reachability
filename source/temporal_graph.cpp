@@ -65,7 +65,16 @@ TemporalGraph::TemporalGraph(char* graph_file, char* graph_type) {
     is_general = 1;
 
     while (fin >> u >> v >> t) {
-        n = std::max(n, std::max(u, v));
+        n = std::max(n, std::max(u, v) + 1);
+        while (head_edge.size() < n) {
+            head_edge.push_back(nullptr);
+            degree.push_back(0);
+        }
+
+        while (head_in_edge.size() < n) {
+            head_in_edge.push_back(nullptr);
+            in_degree.push_back(0);
+        }
         ++m;
         tmax = std::max(tmax, t);
         while (temporal_edge.size() < t + 1) {
@@ -73,6 +82,10 @@ TemporalGraph::TemporalGraph(char* graph_file, char* graph_type) {
         }
         temporal_edge[t].push_back(std::make_pair(u, v));
         edge_set.push_back(std::make_pair(std::make_pair(u, v), t));
+        addEdge(u, v, t);
+        if (!is_directed) {
+            addEdge(v, u, t);
+        }
     }
     ++n;
 }
