@@ -69,8 +69,8 @@ bool Index::reachable(TemporalGraph* G, int u, int v, int ts, int te, int k_inpu
             }
             for (int j = 0; j <= k_input - (k - 2); j++) {
                 for (auto it = index[i][v][j].begin(); it != index[i][v][j].end(); it++) {
-                    int ts_index = *it / (G->tmax + 1);
-                    int te_index = *it % (G->tmax + 1);
+                    int ts_index = -*it / (G->tmax + 1);
+                    int te_index = -*it % (G->tmax + 1);
                     if (ts_index >= ts) {
                         if (te_index <= te) {
                             return true;
@@ -157,7 +157,7 @@ Index::Index(TemporalGraph* G, int k_input) {
                         for (int j = 0; j < 3; j++) {
                             index[i - 1][e->to].push_back(std::set<long long>());
                         }
-                        index[i - 1][e->to][std::max(k - 2, current[3] + 1) - (k - 2)].insert((long long)ts * (Graph->tmax + 1) + te);
+                        index[i - 1][e->to][std::max(k - 2, current[3] + 1) - (k - 2)].insert(-(long long)ts * (Graph->tmax + 1) - te);
                         std::vector<int> next;
                         next.push_back(e->to);
                         next.push_back(ts);
@@ -169,8 +169,8 @@ Index::Index(TemporalGraph* G, int k_input) {
                         bool flag = false;
                         int j = std::max(0, current[3] + 1 - (k - 2));
                         for (auto it1 = index[i - 1][e->to][j].begin(); it1 != index[i - 1][e->to][j].end();) {
-                            int ts_index = *it1 / (Graph->tmax + 1);
-                            int te_index = *it1 % (Graph->tmax + 1);
+                            int ts_index = -*it1 / (Graph->tmax + 1);
+                            int te_index = -*it1 % (Graph->tmax + 1);
                             if (ts_index >= ts && te_index <= te) {
                                 flag = true;
                                 break;
@@ -183,7 +183,7 @@ Index::Index(TemporalGraph* G, int k_input) {
                             }
                         }
                         if (!flag) {
-                            index[i - 1][e->to][std::max(k - 2, current[3] + 1) - (k - 2)].insert((long long)ts * (Graph->tmax + 1) + te);
+                            index[i - 1][e->to][j].insert(-(long long)ts * (Graph->tmax + 1) - te);
                         }
                         if (!flag || current[3] + 1 < k - 2) {
                             std::vector<int> next;
