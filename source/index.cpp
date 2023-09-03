@@ -12,6 +12,23 @@ bool Index::reachable(TemporalGraph* G, int u, int v, int ts, int te, int k_inpu
     if (u == v) {
         return true;
     }
+    if (k_input == 1) {
+        TemporalGraph::Edge* e = G->getHeadEdge(u);
+        while (e) {
+            if (e->to == v && e->interaction_time >= ts && e->interaction_time <= te) {
+                return true;
+            }
+            e = e->next;
+        }
+        e = G->getHeadInEdge(v);
+        while (e) {
+            if (e->to == u && e->interaction_time >= ts && e->interaction_time <= te) {
+                return true;
+            }
+            e = e->next;
+        }
+        return false;
+    }
     if (vertex_cover.find(u) == vertex_cover.end()) {
         if (vertex_cover.find(v) != vertex_cover.end()) {
             TemporalGraph::Edge* e = G->getHeadEdge(u);
@@ -129,8 +146,8 @@ Index::Index(TemporalGraph* G, int k_input) {
             if (current[3] == k) {
                 continue;
             }
-            int u = current[0];
-            TemporalGraph::Edge* e = Graph->getHeadEdge(u);
+            int v = current[0];
+            TemporalGraph::Edge* e = Graph->getHeadEdge(v);
             while (e) {
                 int ts = std::min(current[1], e->interaction_time);
                 int te = std::max(current[2], e->interaction_time);
@@ -167,6 +184,8 @@ Index::Index(TemporalGraph* G, int k_input) {
                         }
                         if (!flag) {
                             index[i - 1][e->to][std::max(k - 2, current[3] + 1) - (k - 2)].insert((long long)ts * (Graph->tmax + 1) + te);
+                        }
+                        if (!flag || current[3] + 1 < k - 2) {
                             std::vector<int> next;
                             next.push_back(e->to);
                             next.push_back(ts);
