@@ -107,9 +107,6 @@ Index::Index(TemporalGraph* G, int k_input) {
         vertex_cover.insert(u);
         vertex_cover.insert(v);
     }
-    for (auto i : vertex_cover) {
-        std::cout << i << std::endl;
-    }
     std::cout << "Vertex cover size: " << vertex_cover.size() << std::endl;
     
     // Construct the index by vertex cover
