@@ -142,7 +142,7 @@ Index::Index(TemporalGraph* G, int k_input, int t_threshold) {
             while (e) {
                 int ts = std::min(current[1], e->interaction_time);
                 int te = std::max(current[2], e->interaction_time);
-                if (te - ts + 1 <= t_threshold) {
+                if (t_threshold == -1 || te - ts + 1 <= t_threshold) {
                     bool flag = false;
                     for (int j = 0; j <= current[3] + 1; j++) {
                         for (auto it1 = visited[e->to][j].begin(); it1 != visited[e->to][j].end(); it1++) {
