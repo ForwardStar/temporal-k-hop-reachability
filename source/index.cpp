@@ -81,7 +81,7 @@ bool Index::reachable(TemporalGraph* G, int u, int v, int ts, int te, int k_inpu
     }
 }
 
-Index::Index(TemporalGraph* G, int k_input) {
+Index::Index(TemporalGraph* G, int k_input, int t_threshold) {
     k = k_input;
 
     // Generate vertex cover
@@ -142,26 +142,28 @@ Index::Index(TemporalGraph* G, int k_input) {
             while (e) {
                 int ts = std::min(current[1], e->interaction_time);
                 int te = std::max(current[2], e->interaction_time);
-                bool flag = false;
-                for (int j = 0; j <= current[3] + 1; j++) {
-                    for (auto it1 = visited[e->to][j].begin(); it1 != visited[e->to][j].end(); it1++) {
-                        if (it1->first >= ts && it1->second <= te) {
-                            flag = true;
+                if (te - ts + 1 <= t_threshold) {
+                    bool flag = false;
+                    for (int j = 0; j <= current[3] + 1; j++) {
+                        for (auto it1 = visited[e->to][j].begin(); it1 != visited[e->to][j].end(); it1++) {
+                            if (it1->first >= ts && it1->second <= te) {
+                                flag = true;
+                                break;
+                            }
+                        }
+                        if (flag) {
                             break;
                         }
                     }
-                    if (flag) {
-                        break;
+                    if (!flag) {
+                        std::vector<int> next;
+                        next.push_back(e->to);
+                        next.push_back(ts);
+                        next.push_back(te);
+                        next.push_back(current[3] + 1);
+                        visited[e->to][current[3] + 1].push_back(std::pair<int, int>(ts, te));
+                        Q.push(next);
                     }
-                }
-                if (!flag) {
-                    std::vector<int> next;
-                    next.push_back(e->to);
-                    next.push_back(ts);
-                    next.push_back(te);
-                    next.push_back(current[3] + 1);
-                    visited[e->to][current[3] + 1].push_back(std::pair<int, int>(ts, te));
-                    Q.push(next);
                 }
                 e = e->next;
             }

@@ -22,7 +22,7 @@ class Index {
 
         bool reachable(TemporalGraph* G, int u, int v, int ts, int te, int k_input);
 
-        Index(TemporalGraph* G, int k_input);
+        Index(TemporalGraph* G, int k_input, int t_threshold);
 
         void solve(TemporalGraph* Graph, char* query_file, char* output_file, int k);
 };

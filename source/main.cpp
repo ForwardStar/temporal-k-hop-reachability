@@ -20,9 +20,11 @@ TemporalGraph* build(char* argv[]) {
 int main(int argc, char* argv[]) {
     std::ios::sync_with_stdio(false);
 
-    int k;
+    int k, t_threshold;
     std::cout << "Input k: ";
     std::cin >> k;
+    std::cout << "Input maximum size of the query time window: ";
+    std::cin >> t_threshold;
 
     if (std::strcmp(argv[argc - 1], "Debug") == 0) {
         debug = true;
@@ -50,7 +52,7 @@ int main(int argc, char* argv[]) {
             std::cout << "Running index..." << std::endl;
             std::cout << "Constructing the index structure..." << std::endl;
             unsigned long long index_construction_start_time = currentTime();
-            Index *index = new Index(Graph, k);
+            Index *index = new Index(Graph, k, t_threshold);
             unsigned long long index_construction_end_time = currentTime();
             std::cout << "Index construction completed in " << timeFormatting(difftime(index_construction_end_time, index_construction_start_time)).str() << std::endl;
             std::cout << "Solving queries..." << std::endl;
