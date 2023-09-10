@@ -135,4 +135,13 @@ TemporalGraph::~TemporalGraph() {
         }
     }
 
+    for (it = head_in_edge.begin(); it != head_in_edge.end(); it++) {
+        Edge* temp = *it;
+        while (temp) {
+            Edge* next = temp->next;
+            delete temp;
+            temp = next;
+        }
+    }
+
 }
