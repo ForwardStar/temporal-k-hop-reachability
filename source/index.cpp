@@ -185,15 +185,6 @@ Index::Index(TemporalGraph* G, int k_input) {
                     index[i - 1][v][std::max(0, j - (k - 2))].insert(-(long long)it2->first * (Graph->tmax + 1) - it2->second);
                 }
             }
-            if (u == 44 && v == 17) {
-                for (int j = 0; j < 3; j++) {
-                    for (auto it2 = index[i - 1][v][j].begin(); it2 != index[i - 1][v][j].end(); it2++) {
-                        int ts = -*it2 / (Graph->tmax + 1);
-                        int te = -*it2 % (Graph->tmax + 1);
-                        std::cout << ts << " " << te << " " << j << std::endl;
-                    }
-                }
-            }
         }
         putProcess(double(i) / vertex_cover.size(), currentTime() - start_time);
     }
