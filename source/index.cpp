@@ -117,19 +117,16 @@ Index::Index(TemporalGraph* G, int k_input, int t_threshold) {
         inv_vertex_cover[u] = i++;
         index.push_back(std::unordered_map<int, std::vector<std::set<long long>>>());
         auto cmp2 = [](std::vector<int> i, std::vector<int> j) {
-            return i[2] - i[1] > j[2] - j[1];
+            return (i[4] > j[4]) || (i[4] == j[4] && i[3] > j[3]);
         };
         std::priority_queue<std::vector<int>, std::vector<std::vector<int>>, decltype(cmp2)> Q(cmp2);
         std::vector<int> start;
-        std::vector<std::vector<std::vector<std::pair<int, int>>>> visited;
-        visited.resize(Graph->n);
-        for (int v = 0; v < Graph->n; v++) {
-            visited[v].resize(k + 1);
-        }
+        std::unordered_map<int, std::vector<std::vector<int>>> fenwick_tree;
         start.push_back(u);
         start.push_back(Graph->tmax + 1);
         start.push_back(-1);
         start.push_back(0);
+        start.push_back(-Graph->tmax);
         Q.push(start);
         while (!Q.empty()) {
             std::vector<int> current = Q.top();
@@ -144,45 +141,78 @@ Index::Index(TemporalGraph* G, int k_input, int t_threshold) {
                 int te = std::max(current[2], e->interaction_time);
                 if (t_threshold == -1 || te - ts + 1 <= t_threshold) {
                     bool flag = false;
-                    for (int j = 0; j <= current[3] + 1; j++) {
-                        for (auto it1 = visited[e->to][j].begin(); it1 != visited[e->to][j].end(); it1++) {
-                            if (it1->first >= ts && it1->second <= te) {
-                                flag = true;
+                    if (fenwick_tree.find(e->to) != fenwick_tree.end()) {
+                        for (int j = 0; j <= current[3] + 1; j++) {
+                            int t = ts + 1;
+                            int val = Graph->tmax + 1;
+                            while (t <= Graph->tmax + 1) {
+                                val = std::min(val, fenwick_tree[e->to][j][t]);
+                                if (val <= te) {
+                                    flag = true;
+                                    break;
+                                }
+                                t += (t & (-t));
+                            }
+                            if (flag) {
                                 break;
                             }
                         }
-                        if (flag) {
-                            break;
-                        }
                     }
                     if (!flag) {
-                        std::vector<int> next;
-                        next.push_back(e->to);
-                        next.push_back(ts);
-                        next.push_back(te);
-                        next.push_back(current[3] + 1);
-                        visited[e->to][current[3] + 1].push_back(std::pair<int, int>(ts, te));
-                        Q.push(next);
+                        if (fenwick_tree.find(e->to) == fenwick_tree.end()) {
+                            fenwick_tree[e->to] = std::vector<std::vector<int>>();
+                            fenwick_tree[e->to].resize(k + 1);
+                            for (int j = 0; j <= k; j++) {
+                                fenwick_tree[e->to][j].resize(Graph->tmax + 2);
+                                for (int t = 1; t <= Graph->tmax + 1; t++) {
+                                    fenwick_tree[e->to][j][t] = Graph->tmax + 1;
+                                }
+                            }
+                        }
+                        int t = ts + 1;
+                        while (t > 0) {
+                            fenwick_tree[e->to][current[3] + 1][t] = std::min(fenwick_tree[e->to][current[3] + 1][t], te);
+                            t -= (t & (-t));
+                        }
+                        if (vertex_cover.find(e->to) != vertex_cover.end()) {
+                            bool flag1 = false;
+                            if (current[3] + 1 < k - 2) {
+                                for (int j = current[3] + 2; j <= k - 2; j++) {
+                                    int t = ts + 1;
+                                    int val = Graph->tmax + 1;
+                                    while (t <= Graph->tmax + 1) {
+                                        val = std::min(val, fenwick_tree[e->to][j][t]);
+                                        if (val <= te) {
+                                            flag1 = true;
+                                            break;
+                                        }
+                                        t += (t & (-t));
+                                    }
+                                    if (flag1) {
+                                        break;
+                                    }
+                                }
+                            }
+                            else {
+                                flag1 = true;
+                            }
+                            if (!flag1) {
+                                index[i - 1][e->to][std::max(current[3] + 1, k - 2)].insert(-(long long)ts * (Graph->tmax + 1) - te);
+                            }
+                        }
+                        if (current[3] + 1 < k) {
+                            std::vector<int> next;
+                            next.push_back(e->to);
+                            next.push_back(ts);
+                            next.push_back(te);
+                            next.push_back(current[3] + 1);
+                            next.push_back(te - ts + 1);
+                            Q.push(next);
+                            
+                        }
                     }
                 }
                 e = e->next;
-            }
-        }
-        for (auto it1 = vertex_cover.begin(); it1 != vertex_cover.end(); it1++) {
-            int v = *it1;
-            if (u == v) {
-                continue;
-            }
-            for (int j = 0; j <= k; j++) {
-                for (auto it2 = visited[v][j].begin(); it2 != visited[v][j].end(); it2++) {
-                    if (index[i - 1].find(v) == index[i - 1].end()) {
-                        index[i - 1][v] = std::vector<std::set<long long>>();
-                        for (int l = 0; l < 3; l++) {
-                            index[i - 1][v].push_back(std::set<long long>());
-                        }
-                    }
-                    index[i - 1][v][std::max(0, j - (k - 2))].insert(-(long long)it2->first * (Graph->tmax + 1) - it2->second);
-                }
             }
         }
         putProcess(double(i) / vertex_cover.size(), currentTime() - start_time);
