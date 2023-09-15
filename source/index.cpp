@@ -1,11 +1,7 @@
 #include "index.h"
 
 bool cmp(std::pair<int, int> i, std::pair<int, int> j) {
-    return i.second > j.second;
-}
-
-bool cmp1(std::pair<int, int> i, std::pair<int, int> j) {
-    return i.first > j.first;
+    return i.first > j.first || (i.first == j.first && i.second < j.second);
 }
 
 bool Index::reachable(TemporalGraph* G, int u, int v, int ts, int te, int k_input) {
@@ -47,22 +43,22 @@ bool Index::reachable(TemporalGraph* G, int u, int v, int ts, int te, int k_inpu
     else {
         if (vertex_cover.find(v) != vertex_cover.end()) {
             int i = inv_vertex_cover[u];
-            if (index[i].find(v) == index[i].end()) {
+            int l = 0;
+            int r = cut[i][v][k_input - (k - 2)] - 1;
+            if (l > r) {
                 return false;
             }
-            for (int j = 0; j <= k_input - (k - 2); j++) {
-                for (auto it = index[i][v][j].begin(); it != index[i][v][j].end(); it++) {
-                    int ts_index = -*it / (G->tmax + 1);
-                    int te_index = -*it % (G->tmax + 1);
-                    if (ts_index >= ts) {
-                        if (te_index <= te) {
-                            return true;
-                        }
-                    }
-                    else {
-                        break;
-                    }
+            while (l < r) {
+                int mid = l + r + 1 >> 1;
+                if (L[i][v][mid].first >= ts) {
+                    l = mid;
                 }
+                else {
+                    r = mid - 1;
+                }
+            }
+            if (L[i][v][l].second <= te) {
+                return true;
             }
             return false;
         }
@@ -85,20 +81,19 @@ Index::Index(TemporalGraph* G, int k_input, int t_threshold) {
     k = k_input;
 
     // Generate vertex cover
-    TemporalGraph* Graph = new TemporalGraph(G, 0, G->tmax);
     Heap* heap = new Heap();
     std::vector<bool> covered;
-    covered.resize(Graph->n);
+    covered.resize(G->n);
 
-    for (int i = 0; i < Graph->edge_set.size(); i++) {
-        int u = Graph->edge_set[i].first.first;
-        int v = Graph->edge_set[i].first.second;
-        heap->insert(i, -(Graph->degree[u] + 1) * (Graph->in_degree[u] + 1) - (Graph->degree[v] + 1) * (Graph->in_degree[v] + 1));
+    for (int i = 0; i < G->edge_set.size(); i++) {
+        int u = G->edge_set[i].first.first;
+        int v = G->edge_set[i].first.second;
+        heap->insert(i, -(G->degree[u] + 1) * (G->in_degree[u] + 1) - (G->degree[v] + 1) * (G->in_degree[v] + 1));
     }
     while (heap->size() > 0) {
         int i = heap->pop();
-        int u = Graph->edge_set[i].first.first;
-        int v = Graph->edge_set[i].first.second;
+        int u = G->edge_set[i].first.first;
+        int v = G->edge_set[i].first.second;
         if (covered[u] || covered[v]) {
             continue;
         }
@@ -108,6 +103,7 @@ Index::Index(TemporalGraph* G, int k_input, int t_threshold) {
         vertex_cover.insert(v);
     }
     std::cout << "Vertex cover size: " << vertex_cover.size() << std::endl;
+    cut.resize(vertex_cover.size());
     
     // Construct the index by vertex cover
     int i = 0;
@@ -115,90 +111,55 @@ Index::Index(TemporalGraph* G, int k_input, int t_threshold) {
     for (auto it = vertex_cover.begin(); it != vertex_cover.end(); it++) {
         int u = *it;
         inv_vertex_cover[u] = i++;
-        index.push_back(std::unordered_map<int, std::vector<std::set<long long>>>());
-        auto cmp2 = [](std::vector<int> i, std::vector<int> j) {
-            return (i[4] > j[4]) || (i[4] == j[4] && i[3] > j[3]);
-        };
-        std::priority_queue<std::vector<int>, std::vector<std::vector<int>>, decltype(cmp2)> Q(cmp2);
+        L.push_back(std::unordered_map<int, std::vector<std::pair<int, int>>>());
+        std::queue<std::vector<int>> Q;
         std::vector<int> start;
-        std::unordered_map<int, std::vector<std::vector<int>>> fenwick_tree;
+        std::unordered_map<int, std::vector<int>> binary_indexed_tree;
+        std::unordered_map<int, std::vector<std::pair<std::pair<int, int>, int>>> T;
+        std::unordered_set<int> Vp;
         start.push_back(u);
-        start.push_back(Graph->tmax + 1);
+        start.push_back(G->tmax + 1);
         start.push_back(-1);
         start.push_back(0);
-        start.push_back(-Graph->tmax);
         Q.push(start);
+
         while (!Q.empty()) {
-            std::vector<int> current = Q.top();
+            std::vector<int> current = Q.front();
             Q.pop();
             int v = current[0];
-            if ((u == v && current[3] != 0) || current[3] == k) {
+            if ((u == v && current[3] != 0)) {
                 continue;
             }
-            TemporalGraph::Edge* e = Graph->getHeadEdge(v);
+            TemporalGraph::Edge* e = G->getHeadEdge(v);
             while (e) {
                 int ts = std::min(current[1], e->interaction_time);
                 int te = std::max(current[2], e->interaction_time);
                 if (t_threshold == -1 || te - ts + 1 <= t_threshold) {
                     bool flag = false;
-                    if (fenwick_tree.find(e->to) != fenwick_tree.end()) {
-                        for (int j = 0; j <= current[3] + 1; j++) {
-                            int t = ts + 1;
-                            int val = Graph->tmax + 1;
-                            while (t <= Graph->tmax + 1) {
-                                val = std::min(val, fenwick_tree[e->to][j][t]);
-                                if (val <= te) {
-                                    flag = true;
-                                    break;
-                                }
-                                t += (t & (-t));
-                            }
-                            if (flag) {
+                    if (binary_indexed_tree.find(e->to) != binary_indexed_tree.end()) {
+                        int t = ts + 1;
+                        while (t <= G->tmax + 1) {
+                            if (binary_indexed_tree[e->to][t] <= te) {
+                                flag = true;
                                 break;
                             }
+                            t += (t & (-t));
                         }
                     }
                     if (!flag) {
-                        if (fenwick_tree.find(e->to) == fenwick_tree.end()) {
-                            fenwick_tree[e->to] = std::vector<std::vector<int>>();
-                            fenwick_tree[e->to].resize(k + 1);
-                            for (int j = 0; j <= k; j++) {
-                                fenwick_tree[e->to][j].resize(Graph->tmax + 2);
-                                for (int t = 1; t <= Graph->tmax + 1; t++) {
-                                    fenwick_tree[e->to][j][t] = Graph->tmax + 1;
-                                }
-                            }
+                        if (Vp.find(e->to) == Vp.end() && vertex_cover.find(e->to) != vertex_cover.end()) {
+                            Vp.insert(e->to);
                         }
+                        if (binary_indexed_tree.find(e->to) == binary_indexed_tree.end()) {
+                            T[e->to] = std::vector<std::pair<std::pair<int, int>, int>>();
+                            binary_indexed_tree[e->to] = std::vector<int>();
+                            binary_indexed_tree[e->to].assign(G->tmax + 2, G->tmax + 1);
+                        }
+                        T[e->to].push_back(std::make_pair(std::make_pair(ts, te), current[3] + 1));
                         int t = ts + 1;
                         while (t > 0) {
-                            fenwick_tree[e->to][current[3] + 1][t] = std::min(fenwick_tree[e->to][current[3] + 1][t], te);
+                            binary_indexed_tree[e->to][t] = std::min(binary_indexed_tree[e->to][t], te);
                             t -= (t & (-t));
-                        }
-                        if (vertex_cover.find(e->to) != vertex_cover.end()) {
-                            bool flag1 = false;
-                            if (current[3] + 1 < k - 2) {
-                                for (int j = current[3] + 2; j <= k - 2; j++) {
-                                    int t = ts + 1;
-                                    int val = Graph->tmax + 1;
-                                    while (t <= Graph->tmax + 1) {
-                                        val = std::min(val, fenwick_tree[e->to][j][t]);
-                                        if (val <= te) {
-                                            flag1 = true;
-                                            break;
-                                        }
-                                        t += (t & (-t));
-                                    }
-                                    if (flag1) {
-                                        break;
-                                    }
-                                }
-                            }
-                            else {
-                                flag1 = true;
-                            }
-                            if (!flag1) {
-                                index[i - 1][e->to][std::max(current[3] + 1, k - 2)].insert(-(long long)ts * (Graph->tmax + 1) - te);
-                            }
                         }
                         if (current[3] + 1 < k) {
                             std::vector<int> next;
@@ -206,22 +167,61 @@ Index::Index(TemporalGraph* G, int k_input, int t_threshold) {
                             next.push_back(ts);
                             next.push_back(te);
                             next.push_back(current[3] + 1);
-                            next.push_back(te - ts + 1);
                             Q.push(next);
-                            
                         }
                     }
                 }
                 e = e->next;
             }
         }
+
+        for (auto it1 = Vp.begin(); it1 != Vp.end(); it1++) {
+            L[i - 1][*it1] = std::vector<std::pair<int, int>>();
+            cut[i - 1][*it1] = std::vector<int>();
+            std::vector<std::pair<int, int>> intervals;
+            std::vector<std::pair<std::pair<int, int>, int>>::iterator it2;
+            for (it2 = T[*it1].begin(); it2 != T[*it1].end(); it2++) {
+                if (it2->second <= k - 2) {
+                    intervals.push_back(it2->first);
+                }
+                else {
+                    break;
+                }
+            }
+            std::sort(intervals.begin(), intervals.end(), cmp);
+            int tmin = G->tmax + 1;
+            for (auto it3 = intervals.begin(); it3 != intervals.end(); it3++) {
+                if (tmin > it3->second) {
+                    tmin = it3->second;
+                    L[i - 1][*it1].push_back(*it3);
+                }
+            }
+            cut[i - 1][*it1].push_back(L[i - 1][*it1].size());
+            for (int j = k - 1; j <= k; j++) {
+                intervals.clear();
+                for (it2; it2 != T[*it1].end(); it2++) {
+                    if (it2->second > j) {
+                        break;
+                    }
+                    intervals.push_back(it2->first);
+                    std::sort(intervals.begin(), intervals.end(), cmp);
+                    int tmin = G->tmax + 1;
+                    for (auto it3 = intervals.begin(); it3 != intervals.end(); it3++) {
+                        if (tmin > it3->second && !reachable(G, u, *it1, it3->first, it3->second, j - 1)) {
+                            tmin = it3->second;
+                            L[i - 1][*it1].push_back(*it3);
+                        }
+                    }
+                }
+                cut[i - 1][*it1].push_back(L[i - 1][*it1].size());
+            }
+        }
+        
         putProcess(double(i) / vertex_cover.size(), currentTime() - start_time);
     }
-
-    delete Graph;
 }
 
-void Index::solve(TemporalGraph* Graph, char* query_file, char* output_file, int k) {
+void Index::solve(TemporalGraph* G, char* query_file, char* output_file, int k) {
     int s, t, ts, te;
     int query_num = 0;
     std::ifstream fin(query_file);
@@ -237,7 +237,7 @@ void Index::solve(TemporalGraph* Graph, char* query_file, char* output_file, int
     unsigned long long start_time = currentTime();
     while (fin >> s >> t >> ts >> te) {
         // Perform online BFS Search
-        if (reachable(Graph, s, t, ts, te, k)) {
+        if (reachable(G, s, t, ts, te, k)) {
             fout << "Reachable" << std::endl;
         }
         else {
