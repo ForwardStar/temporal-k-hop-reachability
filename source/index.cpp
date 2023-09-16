@@ -114,7 +114,7 @@ Index::Index(TemporalGraph* G, int k_input, int t_threshold) {
         L.push_back(std::unordered_map<int, std::vector<std::pair<int, int>>>());
         std::queue<std::vector<int>> Q;
         std::vector<int> start;
-        std::unordered_map<int, std::vector<int>> binary_indexed_tree;
+        std::unordered_map<int, std::vector<std::pair<int, int>>> binary_indexed_tree;
         std::unordered_map<int, std::vector<std::pair<std::pair<int, int>, int>>> T;
         std::unordered_set<int> Vp;
         start.push_back(u);
@@ -127,6 +127,20 @@ Index::Index(TemporalGraph* G, int k_input, int t_threshold) {
             std::vector<int> current = Q.front();
             Q.pop();
             int v = current[0];
+            if (binary_indexed_tree.find(v) != binary_indexed_tree.end()) {
+                bool flag = false;
+                int t = current[1] + 1;
+                while (t > 0) {
+                    if (binary_indexed_tree[v][t].first < current[2] && binary_indexed_tree[v][t].second == current[3]) {
+                        flag = true;
+                        break;
+                    }
+                    t -= (t & (-t));
+                }
+                if (flag) {
+                    continue;
+                }
+            }
             if ((u == v && current[3] != 0)) {
                 continue;
             }
@@ -139,7 +153,7 @@ Index::Index(TemporalGraph* G, int k_input, int t_threshold) {
                     if (binary_indexed_tree.find(e->to) != binary_indexed_tree.end()) {
                         int t = ts + 1;
                         while (t <= G->tmax + 1) {
-                            if (binary_indexed_tree[e->to][t] <= te) {
+                            if (binary_indexed_tree[e->to][t].first <= te) {
                                 flag = true;
                                 break;
                             }
@@ -152,13 +166,16 @@ Index::Index(TemporalGraph* G, int k_input, int t_threshold) {
                         }
                         if (binary_indexed_tree.find(e->to) == binary_indexed_tree.end()) {
                             T[e->to] = std::vector<std::pair<std::pair<int, int>, int>>();
-                            binary_indexed_tree[e->to] = std::vector<int>();
-                            binary_indexed_tree[e->to].assign(G->tmax + 2, G->tmax + 1);
+                            binary_indexed_tree[e->to] = std::vector<std::pair<int, int>>();
+                            binary_indexed_tree[e->to].assign(G->tmax + 1, std::make_pair(G->tmax + 2, 0));
                         }
                         T[e->to].push_back(std::make_pair(std::make_pair(ts, te), current[3] + 1));
                         int t = ts + 1;
                         while (t > 0) {
-                            binary_indexed_tree[e->to][t] = std::min(binary_indexed_tree[e->to][t], te);
+                            if (te < binary_indexed_tree[e->to][t].first) {
+                                binary_indexed_tree[e->to][t].first = te;
+                                binary_indexed_tree[e->to][t].second = current[3] + 1;
+                            }
                             t -= (t & (-t));
                         }
                         if (current[3] + 1 < k) {
