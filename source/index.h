@@ -1,6 +1,5 @@
 #include "commonfunctions.h"
 #include "temporal_graph.h"
-#include "heap.h"
 
 class Index {
     private:

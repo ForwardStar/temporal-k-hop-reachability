@@ -89,19 +89,23 @@ Index::Index(TemporalGraph* G, int k_input, int t_threshold) {
     k = k_input;
 
     // Generate vertex cover
-    Heap* heap = new Heap();
+    auto less_degree_first = [](std::pair<int, long> i, std::pair<int, long> j) {
+        return i.second > j.second;
+    };
+    std::priority_queue<std::pair<int, long>, std::vector<std::pair<int, long>>, decltype(less_degree_first)> heap(less_degree_first);
     std::vector<bool> covered;
     covered.resize(G->n);
 
     for (int i = 0; i < G->edge_set.size(); i++) {
         int u = G->edge_set[i].first.first;
         int v = G->edge_set[i].first.second;
-        heap->insert(i, -(G->degree[u] + 1) * (G->in_degree[u] + 1) - (G->degree[v] + 1) * (G->in_degree[v] + 1));
+        heap.push(std::make_pair(i, -((long long)G->degree[u] + 1) * (G->in_degree[u] + 1) - ((long long)G->degree[v] + 1) * (G->in_degree[v] + 1)));
     }
-    while (heap->size() > 0) {
-        int i = heap->pop();
-        int u = G->edge_set[i].first.first;
-        int v = G->edge_set[i].first.second;
+    while (heap.size() > 0) {
+        auto e = heap.top();
+        heap.pop();
+        int u = G->edge_set[e.first].first.first;
+        int v = G->edge_set[e.first].first.second;
         if (covered[u] || covered[v]) {
             continue;
         }
