@@ -43,22 +43,30 @@ bool Index::reachable(TemporalGraph* G, int u, int v, int ts, int te, int k_inpu
     else {
         if (vertex_cover.find(v) != vertex_cover.end()) {
             int i = inv_vertex_cover[u];
-            int l = 0;
-            int r = cut[i][v][k_input - (k - 2)] - 1;
-            if (l > r) {
+            if (L[i].find(v) == L[i].end()) {
                 return false;
             }
-            while (l < r) {
-                int mid = l + r + 1 >> 1;
-                if (L[i][v][mid].first >= ts) {
-                    l = mid;
+            for (int j = k - 2; j <= k_input; j++) {
+                int l = 0;
+                if (j > k - 2) {
+                    l = cut[i][v][j - 1 - (k - 2)];
                 }
-                else {
-                    r = mid - 1;
+                int r = cut[i][v][j - (k - 2)] - 1;
+                if (l > r) {
+                    continue;
                 }
-            }
-            if (L[i][v][l].second <= te) {
-                return true;
+                while (l < r) {
+                    int mid = l + r + 1 >> 1;
+                    if (L[i][v][mid].first >= ts) {
+                        l = mid;
+                    }
+                    else {
+                        r = mid - 1;
+                    }
+                }
+                if (L[i][v][l].first >= ts && L[i][v][l].second <= te) {
+                    return true;
+                }
             }
             return false;
         }
@@ -221,13 +229,13 @@ Index::Index(TemporalGraph* G, int k_input, int t_threshold) {
                         break;
                     }
                     intervals.push_back(it2->first);
-                    std::sort(intervals.begin(), intervals.end(), cmp);
-                    int tmin = G->tmax + 1;
-                    for (auto it3 = intervals.begin(); it3 != intervals.end(); it3++) {
-                        if (tmin > it3->second && !reachable(G, u, *it1, it3->first, it3->second, j - 1)) {
-                            tmin = it3->second;
-                            L[i - 1][*it1].push_back(*it3);
-                        }
+                }
+                std::sort(intervals.begin(), intervals.end(), cmp);
+                int tmin = G->tmax + 1;
+                for (auto it3 = intervals.begin(); it3 != intervals.end(); it3++) {
+                    if (tmin > it3->second && !reachable(G, u, *it1, it3->first, it3->second, j - 1)) {
+                        tmin = it3->second;
+                        L[i - 1][*it1].push_back(*it3);
                     }
                 }
                 cut[i - 1][*it1].push_back(L[i - 1][*it1].size());
