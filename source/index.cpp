@@ -4,6 +4,10 @@ bool cmp(std::pair<int, int> i, std::pair<int, int> j) {
     return i.first > j.first || (i.first == j.first && i.second < j.second);
 }
 
+bool cmp1(std::pair<std::pair<int, int>, int> i, std::pair<std::pair<int, int>, int> j) {
+    return i.second < j.second;
+}
+
 bool Index::reachable(TemporalGraph* G, int u, int v, int ts, int te, int k_input) {
     if (u == v) {
         return true;
@@ -46,26 +50,43 @@ bool Index::reachable(TemporalGraph* G, int u, int v, int ts, int te, int k_inpu
             if (L[i].find(v) == L[i].end()) {
                 return false;
             }
-            for (int j = k - 2; j <= k_input; j++) {
-                int l = 0;
-                if (j > k - 2) {
-                    l = cut[i][v][j - 1 - (k - 2)];
-                }
-                int r = cut[i][v][j - (k - 2)] - 1;
-                if (l > r) {
-                    continue;
-                }
-                while (l < r) {
-                    int mid = l + r + 1 >> 1;
-                    if (L[i][v][mid].first >= ts) {
-                        l = mid;
+            if (index_construct_algorithm == "PrioritySearch" || index_construct_algorithm == "BFS-naive") {
+                for (int j = k - 2; j <= k_input; j++) {
+                    int l = 0;
+                    if (j > k - 2) {
+                        l = cut[i][v][j - 1 - (k - 2)];
                     }
-                    else {
-                        r = mid - 1;
+                    int r = cut[i][v][j - (k - 2)];
+                    for (l; l < r; l++) {
+                        if (L[i][v][l].first >= ts && L[i][v][l].second <= te) {
+                            return true;
+                        }
                     }
+                    return false;
                 }
-                if (L[i][v][l].first >= ts && L[i][v][l].second <= te) {
-                    return true;
+            }
+            else {
+                for (int j = k - 2; j <= k_input; j++) {
+                    int l = 0;
+                    if (j > k - 2) {
+                        l = cut[i][v][j - 1 - (k - 2)];
+                    }
+                    int r = cut[i][v][j - (k - 2)] - 1;
+                    if (l > r) {
+                        continue;
+                    }
+                    while (l < r) {
+                        int mid = l + r + 1 >> 1;
+                        if (L[i][v][mid].first >= ts) {
+                            l = mid;
+                        }
+                        else {
+                            r = mid - 1;
+                        }
+                    }
+                    if (L[i][v][l].first >= ts && L[i][v][l].second <= te) {
+                        return true;
+                    }
                 }
             }
             return false;
@@ -85,21 +106,22 @@ bool Index::reachable(TemporalGraph* G, int u, int v, int ts, int te, int k_inpu
     }
 }
 
-Index::Index(TemporalGraph* G, int k_input, int t_threshold) {
+Index::Index(TemporalGraph* G, int k_input, int t_threshold, std::string algorithm) {
     k = k_input;
+    index_construct_algorithm = algorithm;
 
     // Generate vertex cover
-    auto less_degree_first = [](std::pair<int, long> i, std::pair<int, long> j) {
-        return i.second > j.second;
+    auto large_degree_first = [](std::pair<int, long> i, std::pair<int, long> j) {
+        return i.second < j.second;
     };
-    std::priority_queue<std::pair<int, long>, std::vector<std::pair<int, long>>, decltype(less_degree_first)> heap(less_degree_first);
+    std::priority_queue<std::pair<int, long>, std::vector<std::pair<int, long>>, decltype(large_degree_first)> heap(large_degree_first);
     std::vector<bool> covered;
     covered.resize(G->n);
 
     for (int i = 0; i < G->edge_set.size(); i++) {
         int u = G->edge_set[i].first.first;
         int v = G->edge_set[i].first.second;
-        heap.push(std::make_pair(i, -((long long)G->degree[u] + 1) * (G->in_degree[u] + 1) - ((long long)G->degree[v] + 1) * (G->in_degree[v] + 1)));
+        heap.push(std::make_pair(i, ((long long)G->degree[u] + 1) * (G->in_degree[u] + 1) + ((long long)G->degree[v] + 1) * (G->in_degree[v] + 1)));
     }
     while (heap.size() > 0) {
         auto e = heap.top();
@@ -118,135 +140,282 @@ Index::Index(TemporalGraph* G, int k_input, int t_threshold) {
     cut.resize(vertex_cover.size());
     
     // Construct the index by vertex cover
-    int i = 0;
-    unsigned long long start_time = currentTime();
-    for (auto it = vertex_cover.begin(); it != vertex_cover.end(); it++) {
-        int u = *it;
-        inv_vertex_cover[u] = i++;
-        L.push_back(std::unordered_map<int, std::vector<std::pair<int, int>>>());
-        std::queue<std::vector<int>> Q;
-        std::vector<int> start;
-        std::unordered_map<int, std::vector<std::pair<int, int>>> binary_indexed_tree;
-        std::unordered_map<int, std::vector<std::pair<std::pair<int, int>, int>>> T;
-        std::unordered_set<int> Vp;
-        start.push_back(u);
-        start.push_back(G->tmax + 1);
-        start.push_back(-1);
-        start.push_back(0);
-        Q.push(start);
+    if (algorithm == "PrioritySearch") {
+        int i = 0;
+        unsigned long long start_time = currentTime();
+        for (auto it = vertex_cover.begin(); it != vertex_cover.end(); it++) {
+            int u = *it;
+            inv_vertex_cover[u] = i++;
+            L.push_back(std::unordered_map<int, std::vector<std::pair<int, int>>>());
+            auto smaller_interval_first = [](std::vector<int> i, std::vector<int> j) {
+                return i[2] - i[1] > j[2] - j[1];
+            };
+            std::priority_queue<std::vector<int>, std::vector<std::vector<int>>, decltype(smaller_interval_first)> Q(smaller_interval_first);
+            std::unordered_map<int, std::vector<std::pair<std::pair<int, int>, int>>> T;
+            std::vector<int> start;
+            std::unordered_set<int> Vp;
+            start.push_back(u);
+            start.push_back(G->tmax + 1);
+            start.push_back(-1);
+            start.push_back(0);
+            Q.push(start);
 
-        while (!Q.empty()) {
-            std::vector<int> current = Q.front();
-            Q.pop();
-            int v = current[0];
-            if (binary_indexed_tree.find(v) != binary_indexed_tree.end()) {
-                bool flag = false;
-                int t = current[1] + 1;
-                while (t > 0) {
-                    if (binary_indexed_tree[v][t].first < current[2] && binary_indexed_tree[v][t].second == current[3]) {
-                        flag = true;
-                        break;
-                    }
-                    t -= (t & (-t));
-                }
-                if (flag) {
+            while (!Q.empty()) {
+                std::vector<int> current = Q.top();
+                Q.pop();
+                int v = current[0];
+                if ((u == v && current[3] != 0)) {
                     continue;
                 }
-            }
-            if ((u == v && current[3] != 0)) {
-                continue;
-            }
-            TemporalGraph::Edge* e = G->getHeadEdge(v);
-            while (e) {
-                int ts = std::min(current[1], e->interaction_time);
-                int te = std::max(current[2], e->interaction_time);
-                if (t_threshold == -1 || te - ts + 1 <= t_threshold) {
-                    bool flag = false;
-                    if (binary_indexed_tree.find(e->to) != binary_indexed_tree.end()) {
-                        int t = ts + 1;
-                        while (t <= G->tmax + 1) {
-                            if (binary_indexed_tree[e->to][t].first <= te) {
+                TemporalGraph::Edge* e = G->getHeadEdge(v);
+                while (e) {
+                    int ts = std::min(current[1], e->interaction_time);
+                    int te = std::max(current[2], e->interaction_time);
+                    if (t_threshold == -1 || te - ts + 1 <= t_threshold) {
+                        bool flag = false;
+                        for (auto it1 = T[e->to].begin(); it1 != T[e->to].end(); it1++) {
+                            if (it1->first.first >= ts && it1->first.second <= te && it1->second <= current[3] + 1) {
                                 flag = true;
                                 break;
                             }
-                            t += (t & (-t));
+                        }
+                        if (!flag) {
+                            if (Vp.find(e->to) == Vp.end() && vertex_cover.find(e->to) != vertex_cover.end()) {
+                                Vp.insert(e->to);
+                            }
+                            T[e->to].push_back(std::make_pair(std::make_pair(ts, te), current[3] + 1));
+                            if (current[3] + 1 < k) {
+                                std::vector<int> next;
+                                next.push_back(e->to);
+                                next.push_back(ts);
+                                next.push_back(te);
+                                next.push_back(current[3] + 1);
+                                Q.push(next);
+                            }
                         }
                     }
-                    if (!flag) {
-                        if (Vp.find(e->to) == Vp.end() && vertex_cover.find(e->to) != vertex_cover.end()) {
-                            Vp.insert(e->to);
+                    e = e->next;
+                }
+            }
+
+            for (auto it1 = Vp.begin(); it1 != Vp.end(); it1++) {
+                L[i - 1][*it1] = std::vector<std::pair<int, int>>();
+                cut[i - 1][*it1] = std::vector<int>();
+                std::sort(T[*it1].begin(), T[*it1].end(), cmp1);
+                std::vector<std::pair<std::pair<int, int>, int>> intervals;
+                auto it2 = T[*it1].begin();
+                for (it2; it2 != T[*it1].end(); it2++) {
+                    if (it2->second > k - 2) {
+                        for (int idx = intervals.size() - 1; idx >= 0; idx--) {
+                            bool flag = false;
+                            for (auto it3 = L[i - 1][*it1].begin(); it3 != L[i - 1][*it1].end(); it3++) {
+                                if (it3->first >= intervals[idx].first.first && it3->second <= intervals[idx].first.second) {
+                                    flag = true;
+                                    break;
+                                }
+                            }
+                            if (!flag) {
+                                L[i - 1][*it1].push_back(intervals[idx].first);
+                            }
                         }
-                        if (binary_indexed_tree.find(e->to) == binary_indexed_tree.end()) {
-                            T[e->to] = std::vector<std::pair<std::pair<int, int>, int>>();
-                            binary_indexed_tree[e->to] = std::vector<std::pair<int, int>>();
-                            binary_indexed_tree[e->to].assign(G->tmax + 1, std::make_pair(G->tmax + 2, 0));
+                        cut[i - 1][*it1].push_back(L[i - 1][*it1].size());
+                        break;
+                    }
+                    intervals.push_back(*it2);
+                }
+                for (int j = k - 1; j <= k; j++) {
+                    for (it2; it2 != T[*it1].end(); it2++) {
+                        if (it2->second > j) {
+                            break;
                         }
-                        T[e->to].push_back(std::make_pair(std::make_pair(ts, te), current[3] + 1));
-                        int t = ts + 1;
+                        L[i - 1][*it1].push_back(it2->first);
+                    }
+                    cut[i - 1][*it1].push_back(L[i - 1][*it1].size());
+                }
+            }
+
+            putProcess(double(i) / vertex_cover.size(), currentTime() - start_time);
+        }
+    }
+    else if (algorithm.rfind("BFS", 0) == 0) {
+        int i = 0;
+        unsigned long long start_time = currentTime();
+        for (auto it = vertex_cover.begin(); it != vertex_cover.end(); it++) {
+            int u = *it;
+            inv_vertex_cover[u] = i++;
+            L.push_back(std::unordered_map<int, std::vector<std::pair<int, int>>>());
+            std::queue<std::vector<int>> Q;
+            std::vector<int> start;
+            std::unordered_map<int, std::vector<std::pair<int, int>>> binary_indexed_tree;
+            std::unordered_map<int, std::vector<std::pair<std::pair<int, int>, int>>> T;
+            std::unordered_set<int> Vp;
+            start.push_back(u);
+            start.push_back(G->tmax + 1);
+            start.push_back(-1);
+            start.push_back(0);
+            Q.push(start);
+
+            while (!Q.empty()) {
+                std::vector<int> current = Q.front();
+                Q.pop();
+                int v = current[0];
+                // Adopts double-checking to avoid expanding non-minimal paths
+                if (algorithm == "BFS-full") {
+                    if (binary_indexed_tree.find(v) != binary_indexed_tree.end()) {
+                        bool flag = false;
+                        int t = current[1] + 1;
                         while (t > 0) {
-                            if (te < binary_indexed_tree[e->to][t].first) {
-                                binary_indexed_tree[e->to][t].first = te;
-                                binary_indexed_tree[e->to][t].second = current[3] + 1;
+                            if (binary_indexed_tree[v][t].first < current[2] && binary_indexed_tree[v][t].second == current[3]) {
+                                flag = true;
+                                break;
                             }
                             t -= (t & (-t));
                         }
-                        if (current[3] + 1 < k) {
-                            std::vector<int> next;
-                            next.push_back(e->to);
-                            next.push_back(ts);
-                            next.push_back(te);
-                            next.push_back(current[3] + 1);
-                            Q.push(next);
+                        if (flag) {
+                            continue;
                         }
                     }
                 }
-                e = e->next;
+                if ((u == v && current[3] != 0)) {
+                    continue;
+                }
+                TemporalGraph::Edge* e = G->getHeadEdge(v);
+                while (e) {
+                    int ts = std::min(current[1], e->interaction_time);
+                    int te = std::max(current[2], e->interaction_time);
+                    if (t_threshold == -1 || te - ts + 1 <= t_threshold) {
+                        // BFS-naive: check minimality by enumerating all previous paths
+                        if (algorithm == "BFS-naive") {
+                            bool flag = false;
+                            for (auto it1 = T[e->to].begin(); it1 != T[e->to].end(); it1++) {
+                                if (it1->first.first >= ts && it1->first.second <= te) {
+                                    flag = true;
+                                    break;
+                                }
+                            }
+                            if (!flag) {
+                                if (Vp.find(e->to) == Vp.end() && vertex_cover.find(e->to) != vertex_cover.end()) {
+                                    Vp.insert(e->to);
+                                }
+                                T[e->to].push_back(std::make_pair(std::make_pair(ts, te), current[3] + 1));
+                                if (current[3] + 1 < k) {
+                                    std::vector<int> next;
+                                    next.push_back(e->to);
+                                    next.push_back(ts);
+                                    next.push_back(te);
+                                    next.push_back(current[3] + 1);
+                                    Q.push(next);
+                                }
+                            }
+                        }
+                        // BFS-partial/full: check minimality by binary indexed tree
+                        else {
+                            bool flag = false;
+                            if (binary_indexed_tree.find(e->to) != binary_indexed_tree.end()) {
+                                int t = ts + 1;
+                                while (t <= G->tmax + 1) {
+                                    if (binary_indexed_tree[e->to][t].first <= te) {
+                                        flag = true;
+                                        break;
+                                    }
+                                    t += (t & (-t));
+                                }
+                            }
+                            if (!flag) {
+                                if (Vp.find(e->to) == Vp.end() && vertex_cover.find(e->to) != vertex_cover.end()) {
+                                    Vp.insert(e->to);
+                                }
+                                if (binary_indexed_tree.find(e->to) == binary_indexed_tree.end()) {
+                                    T[e->to] = std::vector<std::pair<std::pair<int, int>, int>>();
+                                    binary_indexed_tree[e->to] = std::vector<std::pair<int, int>>();
+                                    binary_indexed_tree[e->to].assign(G->tmax + 1, std::make_pair(G->tmax + 2, 0));
+                                }
+                                T[e->to].push_back(std::make_pair(std::make_pair(ts, te), current[3] + 1));
+                                int t = ts + 1;
+                                while (t > 0) {
+                                    if (te < binary_indexed_tree[e->to][t].first) {
+                                        binary_indexed_tree[e->to][t].first = te;
+                                        binary_indexed_tree[e->to][t].second = current[3] + 1;
+                                    }
+                                    t -= (t & (-t));
+                                }
+                                if (current[3] + 1 < k) {
+                                    std::vector<int> next;
+                                    next.push_back(e->to);
+                                    next.push_back(ts);
+                                    next.push_back(te);
+                                    next.push_back(current[3] + 1);
+                                    Q.push(next);
+                                }
+                            }
+                        }
+                    }
+                    e = e->next;
+                }
             }
-        }
 
-        for (auto it1 = Vp.begin(); it1 != Vp.end(); it1++) {
-            L[i - 1][*it1] = std::vector<std::pair<int, int>>();
-            cut[i - 1][*it1] = std::vector<int>();
-            std::vector<std::pair<int, int>> intervals;
-            std::vector<std::pair<std::pair<int, int>, int>>::iterator it2;
-            for (it2 = T[*it1].begin(); it2 != T[*it1].end(); it2++) {
-                if (it2->second <= k - 2) {
-                    intervals.push_back(it2->first);
-                }
-                else {
-                    break;
-                }
-            }
-            std::sort(intervals.begin(), intervals.end(), cmp);
-            int tmin = G->tmax + 1;
-            for (auto it3 = intervals.begin(); it3 != intervals.end(); it3++) {
-                if (tmin > it3->second) {
-                    tmin = it3->second;
-                    L[i - 1][*it1].push_back(*it3);
-                }
-            }
-            cut[i - 1][*it1].push_back(L[i - 1][*it1].size());
-            for (int j = k - 1; j <= k; j++) {
-                intervals.clear();
-                for (it2; it2 != T[*it1].end(); it2++) {
-                    if (it2->second > j) {
-                        break;
-                    }
-                    intervals.push_back(it2->first);
-                }
-                std::sort(intervals.begin(), intervals.end(), cmp);
-                int tmin = G->tmax + 1;
-                for (auto it3 = intervals.begin(); it3 != intervals.end(); it3++) {
-                    if (tmin > it3->second && !reachable(G, u, *it1, it3->first, it3->second, j - 1)) {
-                        tmin = it3->second;
-                        L[i - 1][*it1].push_back(*it3);
+            // BFS-naive: takes all paths in T as an index
+            if (algorithm == "BFS-naive") {
+                for (auto it1 = Vp.begin(); it1 != Vp.end(); it1++) {
+                    L[i - 1][*it1] = std::vector<std::pair<int, int>>();
+                    cut[i - 1][*it1] = std::vector<int>();
+                    int j = k - 2;
+                    for (auto it2 = T[*it1].begin(); it2 != T[*it1].end(); it2++) {
+                        while (it2->second > j) {
+                            cut[i - 1][*it1].push_back(L[i - 1][*it1].size());
+                            j++;
+                        }
+                        L[i - 1][*it1].push_back(it2->first);
                     }
                 }
-                cut[i - 1][*it1].push_back(L[i - 1][*it1].size());
             }
+            // BFS-partial/full: adopts suffix-minimum array to prune the index
+            else {
+                 for (auto it1 = Vp.begin(); it1 != Vp.end(); it1++) {
+                    L[i - 1][*it1] = std::vector<std::pair<int, int>>();
+                    cut[i - 1][*it1] = std::vector<int>();
+                    std::vector<std::pair<int, int>> intervals;
+                    std::vector<std::pair<std::pair<int, int>, int>>::iterator it2;
+                    for (it2 = T[*it1].begin(); it2 != T[*it1].end(); it2++) {
+                        if (it2->second <= k - 2) {
+                            intervals.push_back(it2->first);
+                        }
+                        else {
+                            break;
+                        }
+                    }
+                    std::sort(intervals.begin(), intervals.end(), cmp);
+                    int tmin = G->tmax + 1;
+                    for (auto it3 = intervals.begin(); it3 != intervals.end(); it3++) {
+                        if (tmin > it3->second) {
+                            tmin = it3->second;
+                            L[i - 1][*it1].push_back(*it3);
+                        }
+                    }
+                    cut[i - 1][*it1].push_back(L[i - 1][*it1].size());
+                    for (int j = k - 1; j <= k; j++) {
+                        intervals.clear();
+                        for (it2; it2 != T[*it1].end(); it2++) {
+                            if (it2->second > j) {
+                                break;
+                            }
+                            intervals.push_back(it2->first);
+                        }
+                        std::sort(intervals.begin(), intervals.end(), cmp);
+                        int tmin = G->tmax + 1;
+                        for (auto it3 = intervals.begin(); it3 != intervals.end(); it3++) {
+                            if (tmin > it3->second && !reachable(G, u, *it1, it3->first, it3->second, j - 1)) {
+                                tmin = it3->second;
+                                L[i - 1][*it1].push_back(*it3);
+                            }
+                        }
+                        cut[i - 1][*it1].push_back(L[i - 1][*it1].size());
+                    }
+                }
+            }
+            
+            putProcess(double(i) / vertex_cover.size(), currentTime() - start_time);
         }
-        
-        putProcess(double(i) / vertex_cover.size(), currentTime() - start_time);
     }
 }
 

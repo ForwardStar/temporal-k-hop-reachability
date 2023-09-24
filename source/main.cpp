@@ -31,6 +31,28 @@ int main(int argc, char* argv[]) {
         argc--;
     }
 
+    std::string algorithm = "BFS-full";
+    std::string algorithm_set[] = {
+        std::string("PrioritySearch"),
+        std::string("BFS-naive"),
+        std::string("BFS-partial"),
+        std::string("BFS-full")
+    };
+    if (std::strcmp(argv[argc - 2], "Index") == 0) {
+        algorithm = argv[argc - 1];
+        argc--;
+    }
+    bool in_algorithm_set = false;
+    for (auto s : algorithm_set) {
+        if (s == algorithm) {
+            in_algorithm_set = true;
+            break;
+        }
+    }
+    if (!in_algorithm_set) {
+        algorithm = "BFS-full";
+    }
+
     unsigned long long start_time = currentTime();
 
     TemporalGraph* Graph = build(argv);
@@ -52,7 +74,7 @@ int main(int argc, char* argv[]) {
             std::cout << "Running index..." << std::endl;
             std::cout << "Constructing the index structure..." << std::endl;
             unsigned long long index_construction_start_time = currentTime();
-            Index *index = new Index(Graph, k, t_threshold);
+            Index *index = new Index(Graph, k, t_threshold, algorithm);
             unsigned long long index_construction_end_time = currentTime();
             std::cout << "Index construction completed in " << timeFormatting(difftime(index_construction_end_time, index_construction_start_time)).str() << std::endl;
             std::cout << "Solving queries..." << std::endl;
