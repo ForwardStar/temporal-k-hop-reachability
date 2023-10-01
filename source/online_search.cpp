@@ -10,7 +10,7 @@ std::string onlineSearch(TemporalGraph* Graph, int s, int t, int ts, int te, int
         Vis[i] = 0;
     }
     std::queue<std::pair<int, int>> Q;
-    TemporalGraph* G = new TemporalGraph(Graph, ts, te);
+    TemporalGraph* G = Graph->projectedGraph(ts, te);
 
     int dis = 0;
     Q.push(std::make_pair(s, 0));

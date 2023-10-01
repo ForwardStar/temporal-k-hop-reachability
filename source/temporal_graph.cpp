@@ -1,10 +1,52 @@
 #include "temporal_graph.h"
 
-int TemporalGraph::find(int u) {
-    if (L[u] != u) {
-        L[u] = find(L[u]);
+void TemporalGraph::tarjan(int now, int &t) {
+    dfsOrder[now] = ++t;
+    lowestOrder[now] = t;
+    Vis[now] = true;
+    Stack.push(now);
+
+    TemporalGraph::Edge* edge = getHeadEdge(now);
+    
+    while (edge) {
+        if (!Vis[edge->to]) {
+            tarjan(edge->to, t);
+        }
+        if (!outOfStack[edge->to]) {
+            lowestOrder[now] = std::min(lowestOrder[now], lowestOrder[edge->to]);
+        }
+        edge = edge->next;
     }
-    return L[u];
+
+    if (dfsOrder[now] == lowestOrder[now]) {
+        std::vector<int> CurrentSCC;
+        while (Stack.top() != now) {
+            outOfStack[Stack.top()] = true;
+            CurrentSCC.push_back(Stack.top());
+            Stack.pop();
+        }
+        outOfStack[Stack.top()] = true;
+        CurrentSCC.push_back(Stack.top());
+        Stack.pop();
+        AllSCC.push_back(CurrentSCC);
+    }
+}
+
+std::vector<std::vector<int>> TemporalGraph::findSCC() {
+    dfsOrder.resize(n);
+    lowestOrder.resize(n);
+    outOfStack.assign(n, 0);
+    Vis.assign(n, 0);
+    AllSCC.clear();
+
+    int t = 0;
+    for (int u = 0; u < n; u++) {
+        if (!Vis[u]) {
+            tarjan(u, t);
+        }
+    }
+    
+    return AllSCC;
 }
 
 int TemporalGraph::numOfVertices() {
@@ -35,7 +77,8 @@ int TemporalGraph::getInteractionTime(Edge* e) {
     return e->interaction_time;
 }
 
-void TemporalGraph::addEdge(int u, int v, int t) {
+void TemporalGraph::addEdge(int u, int v, int t, bool repeat) {
+    m++;
     degree[u]++;
     if (head_edge[u]) {
         head_edge[u] = new Edge(v, t, head_edge[u]);
@@ -50,11 +93,35 @@ void TemporalGraph::addEdge(int u, int v, int t) {
     else {
         head_in_edge[v] = new Edge(u, t, nullptr);
     }
+    if (!is_directed && repeat) {
+        m--;
+        addEdge(v, u, t, false);
+    }
 }
 
-int TemporalGraph::size() {
-    // Each edge consumes 8 bytes for 2 ints.
-    return 8 * m;
+TemporalGraph* TemporalGraph::projectedGraph(int ts, int te) {
+    TemporalGraph* G = new TemporalGraph();
+    G->n = n;
+    G->m = 0;
+    G->tmax = tmax;
+    G->is_directed = is_directed;
+    G->temporal_edge.resize(tmax + 1);
+    G->head_edge.assign(n, nullptr);
+    G->degree.assign(n, 0);
+    G->head_in_edge.assign(n, nullptr);
+    G->in_degree.assign(n, 0);
+
+    for (int t = ts; t <= te; ++t) {
+        for (auto it = temporal_edge[t].begin(); it != temporal_edge[t].end(); it++) {
+            int u = it->first;
+            int v = it->second;
+            G->temporal_edge[t].push_back(std::make_pair(u, v));
+            G->edge_set.push_back(std::make_pair(std::make_pair(u, v), t));
+            G->addEdge(u, v, t);
+        }
+    }
+
+    return G;
 }
 
 TemporalGraph::TemporalGraph(char* graph_file, char* graph_type) {
@@ -62,10 +129,10 @@ TemporalGraph::TemporalGraph(char* graph_file, char* graph_type) {
     std::ifstream fin(graph_file);
 
     is_directed = std::strcmp(graph_type, "Directed") == 0;
-    is_general = 1;
 
     while (fin >> u >> v >> t) {
         n = std::max(n, std::max(u, v) + 1);
+
         while (head_edge.size() < n) {
             head_edge.push_back(nullptr);
             degree.push_back(0);
@@ -75,51 +142,18 @@ TemporalGraph::TemporalGraph(char* graph_file, char* graph_type) {
             head_in_edge.push_back(nullptr);
             in_degree.push_back(0);
         }
-        ++m;
+
         tmax = std::max(tmax, t);
+
         while (temporal_edge.size() < t + 1) {
             temporal_edge.push_back(std::vector<std::pair<int, int>>());
         }
+
         temporal_edge[t].push_back(std::make_pair(u, v));
         edge_set.push_back(std::make_pair(std::make_pair(u, v), t));
         addEdge(u, v, t);
-        if (!is_directed) {
-            addEdge(v, u, t);
-        }
     }
     ++n;
-}
-
-TemporalGraph::TemporalGraph(TemporalGraph* Graph, int ts, int te) {
-    n = Graph->numOfVertices();
-    m = Graph->numOfEdges();
-    tmax = Graph->tmax;
-    is_directed = Graph->is_directed;
-    is_general = 0;
-    edge_set = std::vector<std::pair<std::pair<int, int>, int>>(Graph->edge_set);
-
-    while (head_edge.size() < n) {
-        head_edge.push_back(nullptr);
-        degree.push_back(0);
-    }
-
-    while (head_in_edge.size() < n) {
-        head_in_edge.push_back(nullptr);
-        in_degree.push_back(0);
-    }
-
-    std::vector<std::pair<int, int>>::iterator it;
-
-    for (int t = ts; t <= te; ++t) {
-        for (it = Graph->temporal_edge[t].begin(); it != Graph->temporal_edge[t].end(); it++) {
-            int u = it->first;
-            int v = it->second;
-            addEdge(u, v, t);
-            if (!is_directed) {
-                addEdge(v, u, t);
-            }
-        }
-    }
 }
 
 TemporalGraph::~TemporalGraph() {

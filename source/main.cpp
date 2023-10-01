@@ -12,7 +12,7 @@ TemporalGraph* build(char* argv[]) {
     TemporalGraph* Graph = new TemporalGraph(argv[1], (char*)"Undirected");
     unsigned long long build_graph_end_time = currentTime();
     std::cout << "Build graph success in " << timeFormatting(difftime(build_graph_end_time, build_graph_start_time)).str() << std::endl;
-    std::cout << "n = " << Graph->numOfVertices() << ", m = " << Graph->numOfEdges() << ", tmax = " << Graph->tmax << ", size = " << Graph->size() << " bytes" << std::endl;
+    std::cout << "n = " << Graph->numOfVertices() << ", m = " << Graph->numOfEdges() << ", tmax = " << Graph->tmax << std::endl;
     return Graph;
     
 }
@@ -33,10 +33,11 @@ int main(int argc, char* argv[]) {
 
     std::string algorithm = "BFS-full";
     std::string algorithm_set[] = {
-        std::string("PrioritySearch"),
+        std::string("PrioritySearch-naive"),
+        std::string("PrioritySearch-full"),
         std::string("BFS-naive"),
-        std::string("BFS-partial"),
-        std::string("BFS-full")
+        std::string("BFS-full"),
+        std::string("Experimental")
     };
     if (std::strcmp(argv[argc - 2], "Index") == 0) {
         algorithm = argv[argc - 1];
@@ -77,6 +78,7 @@ int main(int argc, char* argv[]) {
             Index *index = new Index(Graph, k, t_threshold, algorithm);
             unsigned long long index_construction_end_time = currentTime();
             std::cout << "Index construction completed in " << timeFormatting(difftime(index_construction_end_time, index_construction_start_time)).str() << std::endl;
+            std::cout << "Number of intervals: " << index->size() << std::endl;
             std::cout << "Solving queries..." << std::endl;
             unsigned long long query_start_time = currentTime();
             index->solve(Graph, argv[i], argv[argc - 2], k);

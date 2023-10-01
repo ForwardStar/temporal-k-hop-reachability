@@ -1,21 +1,22 @@
 #ifndef COMMONFUNCTIONS
 #define COMMONFUNCTIONS
 
-#include <ctime>
+#include <algorithm>
 #include <chrono>
+#include <cstring>
+#include <ctime>
+#include <fstream>
+#include <map>
 #include <iomanip>
 #include <iostream>
-#include <fstream>
-#include <sstream>
-#include <algorithm>
-#include <string>
-#include <cstring>
-#include <vector>
-#include <map>
-#include <set>
-#include <unordered_set>
-#include <unordered_map>
 #include <queue>
+#include <unordered_map>
+#include <unordered_set>
+#include <vector>
+#include <set>
+#include <sstream>
+#include <stack>
+#include <string>
 
 void putCCNumAndSize(int n, int *p);
 

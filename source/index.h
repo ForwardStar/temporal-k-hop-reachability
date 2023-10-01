@@ -13,6 +13,8 @@ class Index {
         int k = 0;
         std::string index_construct_algorithm;
 
+        int size();
+
         bool reachable(TemporalGraph* G, int u, int v, int ts, int te, int k_input);
 
         Index(TemporalGraph* G, int k_input, int t_threshold, std::string algorithm);

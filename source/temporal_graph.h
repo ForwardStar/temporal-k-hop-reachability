@@ -5,9 +5,14 @@
 
 class TemporalGraph {
     private:
-        int* L;
-        int find(int u);
-       
+        std::vector<int> dfsOrder;
+        std::vector<int> lowestOrder;
+        std::vector<bool> outOfStack;
+        std::vector<bool> Vis;
+        std::stack<int> Stack;
+        std::vector<std::vector<int>> AllSCC;
+        void tarjan(int now, int &t);
+
     public:
         // Edge: the structure of the edges in the temporal graph.
         struct Edge {
@@ -46,9 +51,11 @@ class TemporalGraph {
         // temporal_edge[t] --> the edge set at time t.
         std::vector<std::vector<std::pair<int, int>>> temporal_edge;
 
-        // is_directed: whether the graph is a directed graph;
-        // is_online: whether the solution is online search.
-        bool is_directed, is_general;
+        // is_directed: whether the graph is a directed graph.
+        bool is_directed;
+
+        // findSCC(): find all SCCs in the graph.
+        std::vector<std::vector<int>> findSCC();
 
         // numOfVertices(): get the number of the vertices in the graph.
         int numOfVertices();
@@ -72,17 +79,45 @@ class TemporalGraph {
         int getInteractionTime(Edge* e);
 
         // addEdge(u, v, t): add an edge (u, v, t) to the graph.
-        void addEdge(int u, int v, int t);
+        void addEdge(int u, int v, int t, bool repeat=true);
+        
+        // inducedSubgraph(S): return the induced subgraph of S.
+        template <typename T>
+        TemporalGraph* inducedSubgraph(T S) {
+            TemporalGraph* G = new TemporalGraph();
+            G->n = n;
+            G->m = 0;
+            G->tmax = tmax;
+            G->is_directed = is_directed;
 
-        // shrink_to_fit(): minimize the edge set.
-        void shrink_to_fit();
+            while (G->head_edge.size() < G->n) {
+                head_edge.push_back(nullptr);
+                degree.push_back(0);
+            }
 
-        // size(): return the size (in bytes) of the graph.
-        int size();
+            while (G->head_in_edge.size() < G->n) {
+                head_in_edge.push_back(nullptr);
+                in_degree.push_back(0);
+            }
+
+            for (auto it = S.begin(); it != S.end(); it++) {
+                Edge* e = getHeadEdge(*it);
+                while (e) {
+                    temporal_edge[e->interaction_time].push_back(std::make_pair(*it, e->to));
+                    edge_set.push_back(std::make_pair(std::make_pair(*it, e->to), e->interaction_time));
+                    G->addEdge(*it, e->to, e->interaction_time);
+                    e = e->next;
+                }
+            }
+
+            return G;
+        }
+
+        // projectedGraph(ts, te): return the projected graph of [ts, te].
+        TemporalGraph* projectedGraph(int ts, int te);
 
         TemporalGraph() {}
         TemporalGraph(char* graph_file, char* graph_type);
-        TemporalGraph(TemporalGraph* Graph, int ts, int te);
         ~TemporalGraph();
 };
 
