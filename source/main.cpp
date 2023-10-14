@@ -1,7 +1,7 @@
 #include "commonfunctions.h"
 #include "temporal_graph.h"
 #include "online_search.h"
-#include "index.h"
+#include "two_hop_index.h"
 
 bool debug = false;
 
@@ -75,7 +75,7 @@ int main(int argc, char* argv[]) {
             std::cout << "Running index..." << std::endl;
             std::cout << "Constructing the index structure..." << std::endl;
             unsigned long long index_construction_start_time = currentTime();
-            Index *index = new Index(Graph, k, t_threshold, algorithm);
+            TwoHopIndex *index = new TwoHopIndex(Graph, k, t_threshold, algorithm);
             unsigned long long index_construction_end_time = currentTime();
             std::cout << "Index construction completed in " << timeFormatting(difftime(index_construction_end_time, index_construction_start_time)).str() << std::endl;
             std::cout << "Number of intervals: " << index->size() << std::endl;

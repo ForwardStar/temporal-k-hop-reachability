@@ -1,7 +1,7 @@
 #include "commonfunctions.h"
 #include "temporal_graph.h"
 
-class Index {
+class TwoHopIndex {
     private:
 
     public:
@@ -17,7 +17,7 @@ class Index {
 
         bool reachable(TemporalGraph* G, int u, int v, int ts, int te, int k_input);
 
-        Index(TemporalGraph* G, int k_input, int t_threshold, std::string algorithm);
+        TwoHopIndex(TemporalGraph* G, int k_input, int t_threshold, std::string algorithm);
 
         void solve(TemporalGraph* G, char* query_file, char* output_file, int k);
 };

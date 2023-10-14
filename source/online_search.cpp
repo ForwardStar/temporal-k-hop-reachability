@@ -26,6 +26,7 @@ std::string onlineSearch(TemporalGraph* Graph, int s, int t, int ts, int te, int
         while (edge) {
             if (!Vis[edge->to]) {
                 if (edge->to == t) {
+                    delete G;
                     return "Reachable";
                 }
                 Q.push(std::make_pair(edge->to, dis + 1));

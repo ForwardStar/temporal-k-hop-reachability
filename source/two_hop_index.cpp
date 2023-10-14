@@ -1,4 +1,4 @@
-#include "index.h"
+#include "two_hop_index.h"
 
 bool cmp(std::pair<int, int> i, std::pair<int, int> j) {
     return i.first > j.first || (i.first == j.first && i.second < j.second);
@@ -8,7 +8,7 @@ bool cmp1(std::pair<std::pair<int, int>, int> i, std::pair<std::pair<int, int>, 
     return i.second < j.second;
 }
 
-int Index::size() {
+int TwoHopIndex::size() {
     int num_intervals = 0;
     for (auto it = L.begin(); it != L.end(); it++) {
         for (auto it1 = it->begin(); it1 != it->end(); it1++) {
@@ -18,7 +18,7 @@ int Index::size() {
     return num_intervals;
 }
 
-bool Index::reachable(TemporalGraph* G, int u, int v, int ts, int te, int k_input) {
+bool TwoHopIndex::reachable(TemporalGraph* G, int u, int v, int ts, int te, int k_input) {
     if (u == v) {
         return true;
     }
@@ -115,7 +115,7 @@ bool Index::reachable(TemporalGraph* G, int u, int v, int ts, int te, int k_inpu
     }
 }
 
-Index::Index(TemporalGraph* G, int k_input, int t_threshold, std::string algorithm) {
+TwoHopIndex::TwoHopIndex(TemporalGraph* G, int k_input, int t_threshold, std::string algorithm) {
     k = k_input;
     index_construct_algorithm = algorithm;
 
@@ -281,31 +281,29 @@ Index::Index(TemporalGraph* G, int k_input, int t_threshold, std::string algorit
                 }
             }
 
-            if (algorithm == "PrioritySearch-naive") {
-                for (auto it1 = Vp.begin(); it1 != Vp.end(); it1++) {
-                    L[i - 1][*it1] = std::vector<std::pair<int, int>>();
-                    cut[i - 1][*it1] = std::vector<int>();
-                    for (int j = k - 2; j >= 0; --j) {
-                        for (auto it2 = T[*it1][j].begin(); it2 != T[*it1][j].end(); it2++) {
-                            bool flag = false;
-                            for (auto it3 = L[i - 1][*it1].begin(); it3 != L[i - 1][*it1].end(); it3++) {
-                                if (it3->first >= it2->first && it3->second <= it2->second) {
-                                    flag = true;
-                                    break;
-                                }
-                            }
-                            if (!flag) {
-                                L[i - 1][*it1].push_back(*it2);
+            for (auto it1 = Vp.begin(); it1 != Vp.end(); it1++) {
+                L[i - 1][*it1] = std::vector<std::pair<int, int>>();
+                cut[i - 1][*it1] = std::vector<int>();
+                for (int j = k - 2; j >= 0; --j) {
+                    for (auto it2 = T[*it1][j].begin(); it2 != T[*it1][j].end(); it2++) {
+                        bool flag = false;
+                        for (auto it3 = L[i - 1][*it1].begin(); it3 != L[i - 1][*it1].end(); it3++) {
+                            if (it3->first >= it2->first && it3->second <= it2->second) {
+                                flag = true;
+                                break;
                             }
                         }
-                    }
-                    cut[i - 1][*it1].push_back(L[i - 1][*it1].size());
-                    for (int j = k - 1; j <= k; j++) {
-                        for (auto it2 = T[*it1][j].begin(); it2 != T[*it1][j].end(); it2++) {
+                        if (!flag) {
                             L[i - 1][*it1].push_back(*it2);
                         }
-                        cut[i - 1][*it1].push_back(L[i - 1][*it1].size());
                     }
+                }
+                cut[i - 1][*it1].push_back(L[i - 1][*it1].size());
+                for (int j = k - 1; j <= k; j++) {
+                    for (auto it2 = T[*it1][j].begin(); it2 != T[*it1][j].end(); it2++) {
+                        L[i - 1][*it1].push_back(*it2);
+                    }
+                    cut[i - 1][*it1].push_back(L[i - 1][*it1].size());
                 }
             }
 
@@ -554,7 +552,7 @@ Index::Index(TemporalGraph* G, int k_input, int t_threshold, std::string algorit
     }
 }
 
-void Index::solve(TemporalGraph* G, char* query_file, char* output_file, int k) {
+void TwoHopIndex::solve(TemporalGraph* G, char* query_file, char* output_file, int k) {
     int s, t, ts, te;
     int query_num = 0;
     std::ifstream fin(query_file);
