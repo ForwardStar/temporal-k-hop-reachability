@@ -2,6 +2,7 @@
 #include "temporal_graph.h"
 #include "online_search.h"
 #include "two_hop_index.h"
+#include "advanced_two_hop.h"
 
 bool debug = false;
 
@@ -37,9 +38,14 @@ int main(int argc, char* argv[]) {
         std::string("PrioritySearch-full"),
         std::string("BFS-naive"),
         std::string("BFS-full"),
-        std::string("Experimental")
+        std::string("PrioritySearch"),
+        std::string("BFS")
     };
-    if (std::strcmp(argv[argc - 2], "Index") == 0) {
+    if (std::strcmp(argv[argc - 2], "TwoHopIndex") == 0) {
+        algorithm = argv[argc - 1];
+        argc--;
+    }
+    if (std::strcmp(argv[argc - 2], "AdvancedTwoHopIndex") == 0) {
         algorithm = argv[argc - 1];
         argc--;
     }
@@ -70,7 +76,7 @@ int main(int argc, char* argv[]) {
         delete Graph;
     }
 
-    if (std::strcmp(argv[argc - 1], "Index") == 0) {
+    if (std::strcmp(argv[argc - 1], "TwoHopIndex") == 0) {
         for (int i = 2; i < argc - 2; i++) {
             std::cout << "Running index..." << std::endl;
             std::cout << "Constructing the index structure..." << std::endl;
@@ -79,6 +85,25 @@ int main(int argc, char* argv[]) {
             unsigned long long index_construction_end_time = currentTime();
             std::cout << "Index construction completed in " << timeFormatting(difftime(index_construction_end_time, index_construction_start_time)).str() << std::endl;
             std::cout << "Number of intervals: " << index->size() << std::endl;
+            std::cout << "Solving queries..." << std::endl;
+            unsigned long long query_start_time = currentTime();
+            index->solve(Graph, argv[i], argv[argc - 2], k);
+            unsigned long long query_end_time = currentTime();
+            std::cout << "Query completed in " << timeFormatting(query_end_time - query_start_time).str() << std::endl;
+            std::cout << "Index completed!" << std::endl;
+        }
+        delete Graph;
+    }
+
+    if (std::strcmp(argv[argc - 1], "AdvancedTwoHopIndex") == 0) {
+        for (int i = 2; i < argc - 2; i++) {
+            std::cout << "Running index..." << std::endl;
+            std::cout << "Constructing the index structure..." << std::endl;
+            unsigned long long index_construction_start_time = currentTime();
+            AdvancedTwoHopIndex *index = new AdvancedTwoHopIndex(Graph, k, t_threshold, algorithm);
+            unsigned long long index_construction_end_time = currentTime();
+            std::cout << "Index construction completed in " << timeFormatting(difftime(index_construction_end_time, index_construction_start_time)).str() << std::endl;
+            // std::cout << "Number of intervals: " << index->size() << std::endl;
             std::cout << "Solving queries..." << std::endl;
             unsigned long long query_start_time = currentTime();
             index->solve(Graph, argv[i], argv[argc - 2], k);

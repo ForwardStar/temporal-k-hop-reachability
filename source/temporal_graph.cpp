@@ -153,7 +153,6 @@ TemporalGraph::TemporalGraph(char* graph_file, char* graph_type) {
         edge_set.push_back(std::make_pair(std::make_pair(u, v), t));
         addEdge(u, v, t);
     }
-    ++n;
 }
 
 TemporalGraph::~TemporalGraph() {
