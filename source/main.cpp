@@ -38,8 +38,7 @@ int main(int argc, char* argv[]) {
         std::string("PrioritySearch-full"),
         std::string("BFS-naive"),
         std::string("BFS-full"),
-        std::string("PrioritySearch"),
-        std::string("BFS")
+        std::string("PrioritySearch")
     };
     if (std::strcmp(argv[argc - 2], "TwoHopIndex") == 0) {
         algorithm = argv[argc - 1];
@@ -103,7 +102,7 @@ int main(int argc, char* argv[]) {
             AdvancedTwoHopIndex *index = new AdvancedTwoHopIndex(Graph, k, t_threshold, algorithm);
             unsigned long long index_construction_end_time = currentTime();
             std::cout << "Index construction completed in " << timeFormatting(difftime(index_construction_end_time, index_construction_start_time)).str() << std::endl;
-            // std::cout << "Number of intervals: " << index->size() << std::endl;
+            std::cout << "Number of intervals: " << index->size() << std::endl;
             std::cout << "Solving queries..." << std::endl;
             unsigned long long query_start_time = currentTime();
             index->solve(Graph, argv[i], argv[argc - 2], k);
