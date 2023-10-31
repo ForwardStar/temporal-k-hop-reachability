@@ -114,12 +114,7 @@ if __name__ == "__main__":
                     "http://konect.cc/files/download.tsv.dblp_coauthor.tar.bz2",
                     "http://konect.cc/files/download.tsv.facebook-wosn-links.tar.bz2",
                     "http://konect.cc/files/download.tsv.youtube-u-growth.tar.bz2",
-                    "http://konect.cc/files/download.tsv.wikipedia-growth.tar.bz2",
-                    "http://konect.cc/files/download.tsv.dblp-cite.tar.bz2",
-                    "http://konect.cc/files/download.tsv.flickr-growth.tar.bz2",
-                    "http://konect.cc/files/download.tsv.soc-sign-bitcoinotc.tar.bz2",
-                    "https://snap.stanford.edu/data/email-Eu-core-temporal.txt.gz",
-                    "https://snap.stanford.edu/data/CollegeMsg.txt.gz"]
+                    "http://konect.cc/files/download.tsv.wikipedia-growth.tar.bz2"]
     if os.path.isdir("datasets") is False or len(os.listdir("datasets")) < len(DATASETS_URL):
         print("Downloading datasets...")
         if os.path.isdir("datasets") is False:

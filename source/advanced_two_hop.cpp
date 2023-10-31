@@ -5,7 +5,7 @@ bool cmp(std::pair<int, long long> i, std::pair<int, long long> j) {
 }
 
 bool cmp1(std::vector<int> i, std::vector<int> j) {
-    return i[1] > j[1];
+    return i[1] > j[1] || (i[1] == j[1] && i[2] < j[2]);
 }
 
 int AdvancedTwoHopIndex::size() {
@@ -161,9 +161,9 @@ bool AdvancedTwoHopIndex::reachable(TemporalGraph* G, int u, int v, int ts, int 
             }
             else {
                 int w = L_out[u][i][0];
-                int d1 = d;
+                int d1 = d + 1;
                 while (i < L_out[u].size() && L_out[u][i][0] == w) {
-                    if (L_out[u][i][3] >= d) {
+                    if (L_out[u][i][3] > d) {
                         if (i >= next_out[u].size()) {
                             return false;
                         }
@@ -194,7 +194,7 @@ bool AdvancedTwoHopIndex::reachable(TemporalGraph* G, int u, int v, int ts, int 
                     i = cut_out[u][i];
                 }
 
-                if (d1 < d) {
+                if (d1 <= d) {
                     while (j < L_in[v].size() && L_in[v][j][0] == w) {
                         if (L_in[v][j][3] > d - d1) {
                             if (j >= next_in[v].size()) {
