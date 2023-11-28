@@ -1,6 +1,6 @@
 #include "online_search.h"
 
-std::string onlineSearch(TemporalGraph* Graph, int s, int t, int ts, int te, int k) {
+std::string onlineSearch(TemporalGraph* Graph, int s, int t, int ts, int te, int k, std::string path_type) {
     if (s == t) {
         return "Reachable";
     }
@@ -40,7 +40,7 @@ std::string onlineSearch(TemporalGraph* Graph, int s, int t, int ts, int te, int
     return "Not reachable";
 }
 
-void online(TemporalGraph* Graph, char* query_file, char* output_file, int k) {
+void online(TemporalGraph* Graph, char* query_file, char* output_file, int k, std::string path_type) {
     int s, t, ts, te;
     int query_num = 0;
     std::ifstream fin(query_file);
@@ -56,7 +56,7 @@ void online(TemporalGraph* Graph, char* query_file, char* output_file, int k) {
     unsigned long long start_time = currentTime();
     while (fin >> s >> t >> ts >> te) {
         // Perform online BFS Search
-        fout << onlineSearch(Graph, s, t, ts, te, k) << std::endl;
+        fout << onlineSearch(Graph, s, t, ts, te, k, path_type) << std::endl;
         putProcess(double(++i) / query_num, currentTime() - start_time);
     }
 

@@ -9,23 +9,22 @@ class AdvancedTwoHopIndex {
                                     std::vector<std::vector<std::vector<int>>> &L, 
                                     std::vector<std::vector<int>> &next_idx, 
                                     std::vector<std::vector<int>> &cut_idx,
-                                    int t_threshold,
-                                    std::string algorithm);
+                                    int t_threshold);
         
     public:
         std::vector<std::vector<std::vector<int>>> L_in, L_out;
         std::vector<std::vector<int>> next_in, next_out;
         std::vector<std::vector<int>> cut_in, cut_out;
         
+        bool is_temporal_path;
         int k = 0;
-        std::string index_construct_algorithm;
         int* order;
 
         int size();
 
         bool reachable(TemporalGraph* G, int u, int v, int ts, int te, int d);
 
-        AdvancedTwoHopIndex(TemporalGraph* G, int k_input, int t_threshold, std::string algorithm);
+        AdvancedTwoHopIndex(TemporalGraph* G, int k_input, int t_threshold, std::string path_type);
         ~AdvancedTwoHopIndex();
         
         void solve(TemporalGraph* G, char* query_file, char* output_file, int k);

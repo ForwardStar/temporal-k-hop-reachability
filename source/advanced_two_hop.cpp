@@ -39,186 +39,130 @@ bool AdvancedTwoHopIndex::reachable(TemporalGraph* G, int u, int v, int ts, int 
         return true;
     }
 
-    if (index_construct_algorithm == "PrioritySearch" || index_construct_algorithm == "BFS-naive") {
-        int idx = find_lowest_index(L_out[u], v);
-        for (int i = idx; i < L_out[u].size(); i++) {
-            if (L_out[u][i][0] != v) {
+    int idx = find_lowest_index(L_out[u], v);
+    if (idx != -1) {
+        while (L_out[u][idx][0] == v) {
+            if (L_out[u][idx][3] > d) {
                 break;
             }
-            if (L_out[u][i][1] >= ts && L_out[u][i][2] <= te && L_out[u][i][3] <= d) {
-                return true;
-            }
-        }
-
-        idx = find_lowest_index(L_in[v], u);
-        for (int i = idx; i < L_in[v].size(); i++) {
-            if (L_in[v][i][0] != u) {
-                break;
-            }
-            if (L_in[v][i][1] >= ts && L_in[v][i][2] <= te && L_in[v][i][3] <= d) {
-                return true;
-            }
-        }
-
-        int i = 0;
-        int j = 0;
-        while (i < L_out[u].size() && j < L_in[v].size()) {
-            if (order[L_out[u][i][0]] < order[L_in[v][j][0]]) {
-                if (i >= next_out[u].size()) {
-                    return false;
-                }
-                i = next_out[u][i];
-            }
-            else if (order[L_out[u][i][0]] > order[L_in[v][j][0]]) {
-                if (j >= next_in[v].size()) {
-                    return false;
-                }
-                j = next_in[v][j];
-            }
-            else if (L_out[u][i][1] >= ts && L_out[u][i][2] <= te) {
-                if (L_in[v][j][1] >= ts && L_in[v][j][2] <= te) {
-                    if (L_out[u][i][3] + L_in[v][j][3] <= d) {
-                        return true;
-                    }
-                    if (i >= next_out[u].size() || j >= next_in[v].size()) {
-                        break;
-                    }
-                    i = next_out[u][i];
-                    j = next_in[v][j];
+            int l = idx;
+            int r = cut_out[u][idx] - 1;
+            while (l < r) {
+                int mid = l + r >> 1;
+                if (L_out[u][mid][1] >= ts) {
+                    r = mid;
                 }
                 else {
-                    j++;
+                    l = mid + 1;
                 }
             }
-            else {
-                i++;
+            if (L_out[u][l][1] >= ts && L_out[u][l][2] <= te) {
+                return true;
             }
+            idx = cut_out[u][idx];
         }
     }
-    else {
-        int idx = find_lowest_index(L_out[u], v);
-        if (idx != -1) {
-            while (L_out[u][idx][0] == v) {
-                if (L_out[u][idx][3] > d) {
+
+    idx = find_lowest_index(L_in[v], u);
+    if (idx != -1) {
+        while (L_in[v][idx][0] == u) {
+            if (L_in[v][idx][3] > d) {
+                break;
+            }
+            int l = idx;
+            int r = cut_in[v][idx] - 1;
+            while (l < r) {
+                int mid = l + r >> 1;
+                if (L_in[v][mid][1] >= ts) {
+                    r = mid;
+                }
+                else {
+                    l = mid + 1;
+                }
+            }
+            if (L_in[v][l][1] >= ts && L_in[v][l][2] <= te) {
+                return true;
+            }
+            idx = cut_in[v][idx];
+        }
+    }
+
+    int i = 0;
+    int j = 0;
+    while (i < L_out[u].size() && j < L_in[v].size()) {
+        if (order[L_out[u][i][0]] < order[L_in[v][j][0]]) {
+            if (i >= next_out[u].size()) {
+                return false;
+            }
+            i = next_out[u][i];
+        }
+        else if (order[L_out[u][i][0]] > order[L_in[v][j][0]]) {
+            if (j >= next_in[v].size()) {
+                return false;
+            }
+            j = next_in[v][j];
+        }
+        else {
+            int w = L_out[u][i][0];
+            int d1 = d + 1;
+            int t1 = te + 1;
+            while (i < L_out[u].size() && L_out[u][i][0] == w) {
+                if (L_out[u][i][3] > d) {
+                    if (i >= next_out[u].size()) {
+                        return false;
+                    }
+                    i = next_out[u][i];
                     break;
                 }
-                int l = idx;
-                int r = cut_out[u][idx] - 1;
+                int l = i;
+                int r = cut_out[u][i] - 1;
                 while (l < r) {
-                    int mid = l + r >> 1;
-                    if (L_out[u][mid][1] >= ts) {
-                        r = mid;
+                    int mid = l + r + 1 >> 1;
+                    if (L_out[u][mid][1] < ts) {
+                        r = mid - 1;
                     }
                     else {
-                        l = mid + 1;
+                        l = mid;
                     }
                 }
                 if (L_out[u][l][1] >= ts && L_out[u][l][2] <= te) {
-                    return true;
-                }
-                idx = cut_out[u][idx];
-            }
-        }
-
-        idx = find_lowest_index(L_in[v], u);
-        if (idx != -1) {
-            while (L_in[v][idx][0] == u) {
-                if (L_in[v][idx][3] > d) {
-                    break;
-                }
-                int l = idx;
-                int r = cut_in[v][idx] - 1;
-                while (l < r) {
-                    int mid = l + r >> 1;
-                    if (L_in[v][mid][1] >= ts) {
-                        r = mid;
+                    d1 = L_out[u][l][3];
+                    t1 = L_out[u][l][2];
+                    if (i >= next_out[u].size()) {
+                        i = L_out[u].size();
                     }
                     else {
-                        l = mid + 1;
+                        i = next_out[u][i];
                     }
+                    break;
                 }
-                if (L_in[v][l][1] >= ts && L_in[v][l][2] <= te) {
-                    return true;
-                }
-                idx = cut_in[v][idx];
+                i = cut_out[u][i];
             }
-        }
 
-        int i = 0;
-        int j = 0;
-        while (i < L_out[u].size() && j < L_in[v].size()) {
-            if (order[L_out[u][i][0]] < order[L_in[v][j][0]]) {
-                if (i >= next_out[u].size()) {
-                    return false;
-                }
-                i = next_out[u][i];
-            }
-            else if (order[L_out[u][i][0]] > order[L_in[v][j][0]]) {
-                if (j >= next_in[v].size()) {
-                    return false;
-                }
-                j = next_in[v][j];
-            }
-            else {
-                int w = L_out[u][i][0];
-                int d1 = d + 1;
-                while (i < L_out[u].size() && L_out[u][i][0] == w) {
-                    if (L_out[u][i][3] > d) {
-                        if (i >= next_out[u].size()) {
+            if (d1 <= d) {
+                while (j < L_in[v].size() && L_in[v][j][0] == w) {
+                    if (L_in[v][j][3] > d - d1) {
+                        if (j >= next_in[v].size()) {
                             return false;
                         }
-                        i = next_out[u][i];
+                        j = next_in[v][j];
                         break;
                     }
-                    int l = i;
-                    int r = cut_out[u][i] - 1;
+                    int l = j;
+                    int r = cut_in[v][j] - 1;
                     while (l < r) {
                         int mid = l + r + 1 >> 1;
-                        if (L_out[u][mid][1] < ts) {
+                        if ((!is_temporal_path && L_in[v][mid][1] < ts) || (is_temporal_path && L_in[v][mid][1] < t1)) {
                             r = mid - 1;
                         }
                         else {
                             l = mid;
                         }
                     }
-                    if (L_out[u][l][1] >= ts && L_out[u][l][2] <= te) {
-                        d1 = L_out[u][l][3];
-                        if (i >= next_out[u].size()) {
-                            i = L_out[u].size();
-                        }
-                        else {
-                            i = next_out[u][i];
-                        }
-                        break;
+                    if (((!is_temporal_path && L_in[v][l][1] >= ts) || (is_temporal_path && L_in[v][l][1] >= t1)) && L_in[v][l][2] <= te) {
+                        return true;
                     }
-                    i = cut_out[u][i];
-                }
-
-                if (d1 <= d) {
-                    while (j < L_in[v].size() && L_in[v][j][0] == w) {
-                        if (L_in[v][j][3] > d - d1) {
-                            if (j >= next_in[v].size()) {
-                                return false;
-                            }
-                            j = next_in[v][j];
-                            break;
-                        }
-                        int l = j;
-                        int r = cut_in[v][j] - 1;
-                        while (l < r) {
-                            int mid = l + r + 1 >> 1;
-                            if (L_in[v][mid][1] < ts) {
-                                r = mid - 1;
-                            }
-                            else {
-                                l = mid;
-                            }
-                        }
-                        if (L_in[v][l][1] >= ts && L_in[v][l][2] <= te) {
-                            return true;
-                        }
-                        j = cut_in[v][j];
-                    }
+                    j = cut_in[v][j];
                 }
             }
         }
@@ -230,46 +174,24 @@ bool AdvancedTwoHopIndex::reachable(TemporalGraph* G, int u, int v, int ts, int 
 void AdvancedTwoHopIndex::construct_for_a_vertex(TemporalGraph* G, int u, bool reverse, std::vector<std::vector<std::vector<int>>> &L, 
                                                 std::vector<std::vector<int>> &next_idx, 
                                                 std::vector<std::vector<int>> &cut_idx,
-                                                int t_threshold,
-                                                std::string algorithm) {
+                                                int t_threshold) {
     std::unordered_set<int> affected_vertices;
     std::vector<std::vector<std::vector<int>>> inc_index;
     inc_index.resize(G->n);
     std::vector<std::vector<std::pair<int, int>>> binary_indexed_tree;
     binary_indexed_tree.resize(G->n);
-    std::queue<std::vector<int>> Q_BFS;
-    auto smaller_interval_first = [](std::vector<int> i, std::vector<int> j) {
-        return (i[2] - i[1] > j[2] - j[1]) || (i[2] - i[1] == j[2] - j[1] && i[3] > j[3]);
-    };
-    std::priority_queue<std::vector<int>, std::vector<std::vector<int>>, decltype(smaller_interval_first)> Q_PR(smaller_interval_first);
+    std::queue<std::vector<int>> Q;
     std::vector<int> start;
     start.push_back(u);
     start.push_back(G->tmax + 1);
     start.push_back(-1);
     start.push_back(0);
-    if (algorithm.rfind("BFS", 0) == 0) {
-        Q_BFS.push(start);
-    }
-    else {
-        Q_PR.push(start);
-    }
+    Q.push(start);
 
-    while (1) {
+    while (!Q.empty()) {
         std::vector<int> current;
-        if (algorithm.rfind("BFS", 0) == 0) {
-            if (Q_BFS.empty()) {
-                break;
-            }
-            current = Q_BFS.front();
-            Q_BFS.pop();
-        }
-        else {
-            if (Q_PR.empty()) {
-                break;
-            }
-            current = Q_PR.top();
-            Q_PR.pop();
-        }
+        current = Q.front();
+        Q.pop();
         int v = current[0];
         int ts = current[1];
         int te = current[2];
@@ -278,25 +200,23 @@ void AdvancedTwoHopIndex::construct_for_a_vertex(TemporalGraph* G, int u, bool r
             continue;
         }
 
-        // Dequeue checking
-        if (algorithm.rfind("BFS", 0) == 0) {
-            bool flag = false;
-            if (binary_indexed_tree[v].size() > 0) {
-                int t = ts + 1;
-                while (t <= G->tmax + 1) {
-                    if (binary_indexed_tree[v][t].first < te && binary_indexed_tree[v][t].second == d) {
-                        flag = true;
-                        break;
-                    }
-                    t += (t & (-t));
+        // Check minimality to avoid expanding non-minimal paths
+        bool flag = false;
+        if (binary_indexed_tree[v].size() > 0) {
+            int t = ts + 1;
+            while (t <= G->tmax + 1) {
+                if (binary_indexed_tree[v][t].first < te && binary_indexed_tree[v][t].second == d) {
+                    flag = true;
+                    break;
                 }
-                if (flag) {
-                    continue;
-                }
+                t += (t & (-t));
             }
             if (flag) {
                 continue;
             }
+        }
+        if (flag) {
+            continue;
         }
 
         // Check whether u can reach v in ([ts, te], d)
@@ -330,15 +250,14 @@ void AdvancedTwoHopIndex::construct_for_a_vertex(TemporalGraph* G, int u, bool r
                 e = e->next;
                 continue;
             }
-            int ts_new = std::min(ts, e->interaction_time);
-            int te_new = std::max(te, e->interaction_time);
-            if (t_threshold != -1 && te_new - ts_new + 1 > t_threshold) {
-                e = e->next;
-                continue;
-            }
-            bool flag = false;
-            // enqueue checking
-            if (algorithm.rfind("BFS", 0) == 0) {
+            if (!is_temporal_path || current[2] <= e->interaction_time) {
+                int ts_new = std::min(ts, e->interaction_time);
+                int te_new = std::max(te, e->interaction_time);
+                if (t_threshold != -1 && te_new - ts_new + 1 > t_threshold) {
+                    e = e->next;
+                    continue;
+                }
+                bool flag = false;
                 if (binary_indexed_tree[e->to].size() > 0) {
                     int t = ts_new + 1;
                     while (t <= G->tmax + 1) {
@@ -349,9 +268,7 @@ void AdvancedTwoHopIndex::construct_for_a_vertex(TemporalGraph* G, int u, bool r
                         t += (t & (-t));
                     }
                 }
-            }
-            if (!flag) {
-                if (algorithm.rfind("BFS", 0) == 0) {
+                if (!flag) {
                     if (binary_indexed_tree[e->to].size() == 0) {
                         binary_indexed_tree[e->to].assign(G->tmax + 2, std::make_pair(G->tmax + 1, 0));
                     }
@@ -363,78 +280,70 @@ void AdvancedTwoHopIndex::construct_for_a_vertex(TemporalGraph* G, int u, bool r
                         }
                         t -= (t & (-t));
                     }
-                }
-                std::vector<int> next;
-                next.push_back(e->to);
-                next.push_back(ts_new);
-                next.push_back(te_new);
-                next.push_back(d + 1);
-                if (algorithm.rfind("BFS", 0) == 0) {
-                    Q_BFS.push(next);
-                }
-                else {
-                    Q_PR.push(next);
+                    std::vector<int> next;
+                    next.push_back(e->to);
+                    next.push_back(ts_new);
+                    next.push_back(te_new);
+                    next.push_back(d + 1);
+                    Q.push(next);
                 }
             }
             e = e->next;
         }
     }
 
-    if (algorithm == "PrioritySearch" || algorithm == "BFS-naive") {
-        for (auto v : affected_vertices) {
-            for (auto path : inc_index[v]) {
-                L[v].push_back(path);
-            }
-        }
-    }
-    else {
-        // Compress the index to form a minimal set of intervals
-        for (auto v : affected_vertices) {
-            int i = 0;
-            int j = 0;
-            std::vector<int> BIT;
-            BIT.assign(G->tmax + 2, G->tmax + 1);
-            for (i = 0; i <= inc_index[v].size(); i++) {
-                if (i == inc_index[v].size() || (i > 0 && inc_index[v][i][3] != inc_index[v][i - 1][3])) {
-                    std::sort(inc_index[v].begin() + j, inc_index[v].begin() + i, cmp1);
-                    while (j < i) {
+    // Compress all enqueued paths to generate a minimal path set
+    for (auto v : affected_vertices) {
+        int i = 0;
+        int j = 0;
+        std::vector<int> BIT;
+        BIT.assign(G->tmax + 2, G->tmax + 1);
+        for (i = 0; i <= inc_index[v].size(); i++) {
+            if (i == inc_index[v].size() || (i > 0 && inc_index[v][i][3] != inc_index[v][i - 1][3])) {
+                std::sort(inc_index[v].begin() + j, inc_index[v].begin() + i, cmp1);
+                while (j < i) {
+                    int t = inc_index[v][j][1] + 1;
+                    bool flag = false;
+                    while (t <= G->tmax + 1) {
+                        if (BIT[t] <= inc_index[v][j][2]) {
+                            flag = true;
+                            break;
+                        }
+                        t += (t & (-t));
+                    }
+                    if (!flag) {
+                        L[v].push_back(inc_index[v][j]);
                         int t = inc_index[v][j][1] + 1;
-                        bool flag = false;
-                        while (t <= G->tmax + 1) {
-                            if (BIT[t] <= inc_index[v][j][2]) {
-                                flag = true;
-                                break;
-                            }
-                            t += (t & (-t));
+                        while (t > 0) {
+                            BIT[t] = std::min(BIT[t], inc_index[v][j][2]);
+                            t -= (t & (-t));
                         }
-                        if (!flag) {
-                            L[v].push_back(inc_index[v][j]);
-                            int t = inc_index[v][j][1] + 1;
-                            while (t > 0) {
-                                BIT[t] = std::min(BIT[t], inc_index[v][j][2]);
-                                t -= (t & (-t));
-                            }
-                        }
-                        j++;
                     }
-                    while (cut_idx[v].size() < L[v].size()) {
-                        cut_idx[v].push_back(L[v].size());
-                    }
+                    j++;
+                }
+                while (cut_idx[v].size() < L[v].size()) {
+                    cut_idx[v].push_back(L[v].size());
                 }
             }
         }
     }
 }
 
-AdvancedTwoHopIndex::AdvancedTwoHopIndex(TemporalGraph* G, int k_input, int t_threshold, std::string algorithm) {
+AdvancedTwoHopIndex::AdvancedTwoHopIndex(TemporalGraph* G, int k_input, int t_threshold, std::string path_type) {
     k = k_input;
-    index_construct_algorithm = algorithm;
     L_in.resize(G->n);
     L_out.resize(G->n);
     next_in.resize(G->n);
     next_out.resize(G->n);
     cut_in.resize(G->n);
     cut_out.resize(G->n);
+
+    if (path_type == "Temporal") {
+        is_temporal_path = true;
+    }
+    else {
+        is_temporal_path = false;
+    }
 
     std::vector<std::pair<int, long long>> vertex_set;
     for (int u = 0; u < G->n; u++) {
@@ -451,8 +360,8 @@ AdvancedTwoHopIndex::AdvancedTwoHopIndex(TemporalGraph* G, int k_input, int t_th
     int i = 0;
     for (auto it = vertex_set.begin(); it != vertex_set.end(); it++) {
         int u = it->first;
-        construct_for_a_vertex(G, u, false, L_in, next_in, cut_in, t_threshold, algorithm);
-        construct_for_a_vertex(G, u, true, L_out, next_out, cut_out, t_threshold, algorithm);
+        construct_for_a_vertex(G, u, false, L_in, next_in, cut_in, t_threshold);
+        construct_for_a_vertex(G, u, true, L_out, next_out, cut_out, t_threshold);
         putProcess(double(++i) / G->n, currentTime() - start_time);
     }
 }
