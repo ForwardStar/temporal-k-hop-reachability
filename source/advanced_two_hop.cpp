@@ -128,12 +128,6 @@ bool AdvancedTwoHopIndex::reachable(TemporalGraph* G, int u, int v, int ts, int 
                 if (L_out[u][l][1] >= ts && L_out[u][l][2] <= te) {
                     d1 = L_out[u][l][3];
                     t1 = L_out[u][l][2];
-                    if (i >= next_out[u].size()) {
-                        i = L_out[u].size();
-                    }
-                    else {
-                        i = next_out[u][i];
-                    }
                     break;
                 }
                 i = cut_out[u][i];
@@ -164,6 +158,13 @@ bool AdvancedTwoHopIndex::reachable(TemporalGraph* G, int u, int v, int ts, int 
                     }
                     j = cut_in[v][j];
                 }
+            }
+
+            if (i >= next_out[u].size()) {
+                i = L_out[u].size();
+            }
+            else {
+                i = next_out[u][i];
             }
         }
     }
@@ -250,7 +251,7 @@ void AdvancedTwoHopIndex::construct_for_a_vertex(TemporalGraph* G, int u, bool r
                 e = e->next;
                 continue;
             }
-            if (!is_temporal_path || current[2] <= e->interaction_time) {
+            if (!is_temporal_path || (!reverse && te <= e->interaction_time) || (reverse && ts >= e->interaction_time)) {
                 int ts_new = std::min(ts, e->interaction_time);
                 int te_new = std::max(te, e->interaction_time);
                 if (t_threshold != -1 && te_new - ts_new + 1 > t_threshold) {

@@ -6,30 +6,46 @@ std::string onlineSearch(TemporalGraph* Graph, int s, int t, int ts, int te, int
     }
 
     std::vector<bool> Vis(Graph->numOfVertices());
+    std::vector<int> T;
+    T.assign(Graph->n, 2147483647);
+    T[s] = -1;
     for (int i = 0; i < Graph->numOfVertices(); i++) {
         Vis[i] = 0;
     }
-    std::queue<std::pair<int, int>> Q;
+    std::queue<std::vector<int>> Q;
     TemporalGraph* G = Graph->projectedGraph(ts, te);
 
-    int dis = 0;
-    Q.push(std::make_pair(s, 0));
+    std::vector<int> start;
+    start.push_back(s);
+    start.push_back(0);
+    start.push_back(-1);
+    Q.push(start);
     Vis[s] = true;
     while (!Q.empty()) {
-        int u = Q.front().first;
-        int dis = Q.front().second;
+        int u = Q.front()[0];
+        int dis = Q.front()[1];
+        int te = Q.front()[2];
         if (dis >= k) {
             break;
         }
         Q.pop();
         TemporalGraph::Edge* edge = G->getHeadEdge(u);
         while (edge) {
-            if (!Vis[edge->to]) {
+            if (path_type == "Temporal" && (edge->interaction_time >= T[edge->to] || te > edge->interaction_time)) {
+                edge = G->getNextEdge(edge);
+                continue;
+            }
+            if (path_type == "Temporal" || !Vis[edge->to]) {
                 if (edge->to == t) {
                     delete G;
                     return "Reachable";
                 }
-                Q.push(std::make_pair(edge->to, dis + 1));
+                T[edge->to] = std::min(T[edge->to], edge->interaction_time);
+                std::vector<int> next;
+                next.push_back(edge->to);
+                next.push_back(dis + 1);
+                next.push_back(edge->interaction_time);
+                Q.push(next);
                 Vis[edge->to] = 1;
             }
             edge = G->getNextEdge(edge);
