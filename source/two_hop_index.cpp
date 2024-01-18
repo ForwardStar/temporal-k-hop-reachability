@@ -139,33 +139,35 @@ TwoHopIndex::TwoHopIndex(TemporalGraph* G, int k_input, int t_threshold, std::st
     }
     std::cout << "Vertex cover size: " << vertex_cover.size() << std::endl;
     cut.resize(vertex_cover.size());
+    L.resize(vertex_cover.size());
+    std::vector<std::vector<std::pair<std::pair<int, int>, int>>> T;
+    T.resize(G->n);
+    std::unordered_set<int> Vn, Vs;
+    std::vector<std::pair<int, int>> intervals;
     
     // Construct the index by vertex cover
     int i = 0;
     unsigned long long start_time = currentTime();
-    for (auto it = vertex_cover.begin(); it != vertex_cover.end(); it++) {
-        int u = *it;
+    for (auto u : vertex_cover) {
         inv_vertex_cover[u] = i++;
-        L.push_back(std::unordered_map<int, std::vector<std::pair<int, int>>>());
         std::queue<std::vector<int>> Q;
-        std::vector<int> start;
-        std::vector<std::vector<std::pair<std::pair<int, int>, int>>> T;
-        T.resize(G->n);
-        std::unordered_set<int> Vp;
-        start.push_back(u);
-        start.push_back(G->tmax + 1);
-        start.push_back(-1);
-        start.push_back(0);
-        Q.push(start);
+        for (auto v : Vn) {
+            T[v].clear();
+        }
+        T.clear();
+        Vn.clear();
+        Vs.clear();
+        Q.push(std::vector<int>{u, G->tmax + 1, -1, 0});
 
+        // BFS to find minimal paths
         while (!Q.empty()) {
             std::vector<int> current = Q.front();
             Q.pop();
-            int v = current[0];
+            int v = current[0], ts = current[1], te = current[2], d = current[3];
             // Check minimality to avoid expanding non-minimal paths
             bool flag = false;
             for (auto it1 = T[v].begin(); it1 != T[v].end(); it1++) {
-                if (it1->first.first >= current[1] && it1->first.second <= current[2] && it1->second == current[3] && (it1->first.first != current[1] || it1->first.second != current[2])) {
+                if (it1->first.first >= ts && it1->first.second <= te && it1->second == d && (it1->first.first != ts || it1->first.second != te)) {
                     flag = true;
                     break;
                 }
@@ -173,35 +175,34 @@ TwoHopIndex::TwoHopIndex(TemporalGraph* G, int k_input, int t_threshold, std::st
             if (flag) {
                 continue;
             }
-            if ((u == v && current[3] != 0)) {
+            if ((u == v && d != 0)) {
                 continue;
             }
             TemporalGraph::Edge* e = G->getHeadEdge(v);
             while (e) {
+                int w = e->to, t = e->interaction_time;
                 // Note that for temporal paths, edges should follow an increasing time order
-                if (!is_temporal_path || current[2] <= e->interaction_time) {
-                    int ts = std::min(current[1], e->interaction_time);
-                    int te = std::max(current[2], e->interaction_time);
-                    if (t_threshold == -1 || te - ts + 1 <= t_threshold) {
+                if (!is_temporal_path || te <= t) {
+                    int ts_new = std::min(ts, t);
+                    int te_new = std::max(te, t);
+                    if (t_threshold == -1 || te_new - ts_new + 1 <= t_threshold) {
                         bool flag = false;
-                        for (auto it1 = T[e->to].begin(); it1 != T[e->to].end(); it1++) {
-                            if (it1->first.first >= ts && it1->first.second <= te) {
+                        for (auto it1 = T[w].begin(); it1 != T[w].end(); it1++) {
+                            if (it1->first.first >= ts_new && it1->first.second <= te_new) {
                                 flag = true;
                                 break;
                             }
                         }
                         if (!flag) {
-                            if (e->to != u && Vp.find(e->to) == Vp.end() && vertex_cover.find(e->to) != vertex_cover.end()) {
-                                Vp.insert(e->to);
+                            if (w != u && Vs.find(w) == Vs.end() && vertex_cover.find(w) != vertex_cover.end()) {
+                                Vs.insert(w);
                             }
-                            T[e->to].push_back(std::make_pair(std::make_pair(ts, te), current[3] + 1));
-                            if (current[3] + 1 < k) {
-                                std::vector<int> next;
-                                next.push_back(e->to);
-                                next.push_back(ts);
-                                next.push_back(te);
-                                next.push_back(current[3] + 1);
-                                Q.push(next);
+                            if (Vn.find(w) == Vn.end()) {
+                                Vn.insert(w);
+                            }
+                            T[w].push_back(std::make_pair(std::make_pair(ts_new, te_new), d + 1));
+                            if (d + 1 < k) {
+                                Q.push(std::vector<int>{w, ts_new, te_new, d + 1});
                             }
                         }
                     }
@@ -211,14 +212,14 @@ TwoHopIndex::TwoHopIndex(TemporalGraph* G, int k_input, int t_threshold, std::st
         }
 
         // Compress all enqueued paths to generate a minimal path set
-        for (auto it1 = Vp.begin(); it1 != Vp.end(); it1++) {
-            L[i - 1][*it1] = std::vector<std::pair<int, int>>();
-            cut[i - 1][*it1] = std::vector<int>();
-            std::vector<std::pair<int, int>> intervals;
-            std::vector<std::pair<std::pair<int, int>, int>>::iterator it2;
-            for (it2 = T[*it1].begin(); it2 != T[*it1].end(); it2++) {
-                if (it2->second <= k - 2) {
-                    intervals.push_back(it2->first);
+        for (auto v : Vs) {
+            L[i - 1][v] = std::vector<std::pair<int, int>>();
+            cut[i - 1][v] = std::vector<int>();
+            intervals.clear();
+            std::vector<std::pair<std::pair<int, int>, int>>::iterator it1;
+            for (it1 = T[v].begin(); it1 != T[v].end(); it1++) {
+                if (it1->second <= k - 2) {
+                    intervals.push_back(it1->first);
                 }
                 else {
                     break;
@@ -226,30 +227,30 @@ TwoHopIndex::TwoHopIndex(TemporalGraph* G, int k_input, int t_threshold, std::st
             }
             std::sort(intervals.begin(), intervals.end(), cmp);
             int tmin = G->tmax + 1;
-            for (auto it3 = intervals.begin(); it3 != intervals.end(); it3++) {
-                if (tmin > it3->second) {
-                    tmin = it3->second;
-                    L[i - 1][*it1].push_back(*it3);
+            for (auto it2 = intervals.begin(); it2 != intervals.end(); it2++) {
+                if (tmin > it2->second) {
+                    tmin = it2->second;
+                    L[i - 1][v].push_back(*it2);
                 }
             }
-            cut[i - 1][*it1].push_back(L[i - 1][*it1].size());
+            cut[i - 1][v].push_back(L[i - 1][v].size());
             for (int j = k - 1; j <= k; j++) {
                 intervals.clear();
-                for (it2; it2 != T[*it1].end(); it2++) {
-                    if (it2->second > j) {
+                for (it1; it1 != T[v].end(); it1++) {
+                    if (it1->second > j) {
                         break;
                     }
-                    intervals.push_back(it2->first);
+                    intervals.push_back(it1->first);
                 }
                 std::sort(intervals.begin(), intervals.end(), cmp);
                 int tmin = G->tmax + 1;
-                for (auto it3 = intervals.begin(); it3 != intervals.end(); it3++) {
-                    if (tmin > it3->second && !reachable(G, u, *it1, it3->first, it3->second, j - 1)) {
-                        tmin = it3->second;
-                        L[i - 1][*it1].push_back(*it3);
+                for (auto it2 = intervals.begin(); it2 != intervals.end(); it2++) {
+                    if (tmin > it2->second && !reachable(G, u, v, it2->first, it2->second, j - 1)) {
+                        tmin = it2->second;
+                        L[i - 1][v].push_back(*it2);
                     }
                 }
-                cut[i - 1][*it1].push_back(L[i - 1][*it1].size());
+                cut[i - 1][v].push_back(L[i - 1][v].size());
             }
         }
         

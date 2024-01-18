@@ -3,6 +3,11 @@
 
 class AdvancedTwoHopIndex {
     private:
+        std::unordered_set<int> affected_vertices;
+        std::vector<std::vector<std::vector<int>>> inc_index;
+        std::vector<std::vector<std::pair<int, int>>> binary_indexed_tree;
+        std::queue<std::vector<int>> Q;
+
         int find_lowest_index(std::vector<std::vector<int>> &L, int v);
 
         void construct_for_a_vertex(TemporalGraph* G, int u, bool reverse, 
@@ -23,6 +28,8 @@ class AdvancedTwoHopIndex {
         int size();
 
         bool reachable(TemporalGraph* G, int u, int v, int ts, int te, int d);
+
+        void update(TemporalGraph* G, double update_fraction);
 
         AdvancedTwoHopIndex(TemporalGraph* G, int k_input, int t_threshold, std::string path_type);
         ~AdvancedTwoHopIndex();

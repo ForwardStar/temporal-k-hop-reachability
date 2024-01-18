@@ -6,10 +6,10 @@
 
 bool debug = false;
 
-TemporalGraph* build(char* argv[]) {
+TemporalGraph* build(char* argv[], std::string graph_type, double fraction) {
     std::cout << "Building graph..." << std::endl;
     unsigned long long build_graph_start_time = currentTime();
-    TemporalGraph* Graph = new TemporalGraph(argv[1], (char*)"Undirected");
+    TemporalGraph* Graph = new TemporalGraph(argv[1], graph_type, fraction);
     unsigned long long build_graph_end_time = currentTime();
     std::cout << "Build graph success in " << timeFormatting(difftime(build_graph_end_time, build_graph_start_time)).str() << std::endl;
     std::cout << "n = " << Graph->numOfVertices() << ", m = " << Graph->numOfEdges() << ", tmax = " << Graph->tmax << std::endl;
@@ -20,7 +20,10 @@ int main(int argc, char* argv[]) {
     std::ios::sync_with_stdio(false);
 
     int k, t_threshold;
-    std::string sol_type, path_type;
+    double update_fraction;
+    std::string sol_type, path_type, graph_type;
+    std::cout << "Input the graph type (Undirected/Directed): ";
+    std::cin >> graph_type;
     std::cout << "Input k: ";
     std::cin >> k;
     std::cout << "Input maximum size of the query time window: ";
@@ -29,6 +32,8 @@ int main(int argc, char* argv[]) {
     std::cin >> sol_type;
     std::cout << "Input the type of paths to be queried (Temporal/Projected): ";
     std::cin >> path_type;
+    std::cout << "Input the fraction of graph to be dynamically updated (0 <= x <= 1): ";
+    std::cin >> update_fraction;
 
     if (std::strcmp(argv[argc - 1], "Debug") == 0) {
         debug = true;
@@ -37,7 +42,7 @@ int main(int argc, char* argv[]) {
 
     unsigned long long start_time = currentTime();
 
-    TemporalGraph* Graph = build(argv);
+    TemporalGraph* Graph = build(argv, graph_type, 1 - update_fraction);
     int vertex_num = Graph->numOfVertices();
 
     if (sol_type == "Online") {
@@ -78,6 +83,10 @@ int main(int argc, char* argv[]) {
             AdvancedTwoHopIndex *index = new AdvancedTwoHopIndex(Graph, k, t_threshold, path_type);
             unsigned long long index_construction_end_time = currentTime();
             std::cout << "Index construction completed in " << timeFormatting(difftime(index_construction_end_time, index_construction_start_time)).str() << std::endl;
+            unsigned long long index_update_start_time = currentTime();
+            index->update(Graph, update_fraction);
+            unsigned long long index_update_end_time = currentTime();
+            std::cout << "Index update completed in " << timeFormatting(difftime(index_update_end_time, index_update_start_time)).str() << std::endl;
             std::cout << "Number of intervals: " << index->size() << std::endl;
             std::cout << "Solving queries..." << std::endl;
             unsigned long long query_start_time = currentTime();

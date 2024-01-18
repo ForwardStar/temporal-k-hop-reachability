@@ -117,7 +117,7 @@ class TemporalGraph {
         TemporalGraph* projectedGraph(int ts, int te);
 
         TemporalGraph() {}
-        TemporalGraph(char* graph_file, char* graph_type);
+        TemporalGraph(char* graph_file, std::string graph_type, double fraction);
         ~TemporalGraph();
 };
 

@@ -124,11 +124,11 @@ TemporalGraph* TemporalGraph::projectedGraph(int ts, int te) {
     return G;
 }
 
-TemporalGraph::TemporalGraph(char* graph_file, char* graph_type) {
+TemporalGraph::TemporalGraph(char* graph_file, std::string graph_type, double fraction) {
     int u, v, t;
     std::ifstream fin(graph_file);
 
-    is_directed = std::strcmp(graph_type, "Directed") == 0;
+    is_directed = graph_type == "Directed";
 
     while (fin >> u >> v >> t) {
         n = std::max(n, std::max(u, v) + 1);
@@ -151,7 +151,12 @@ TemporalGraph::TemporalGraph(char* graph_file, char* graph_type) {
 
         temporal_edge[t].push_back(std::make_pair(u, v));
         edge_set.push_back(std::make_pair(std::make_pair(u, v), t));
-        addEdge(u, v, t);
+    }
+
+    for (int t = 0; t <= tmax * fraction; t++) {
+        for (auto e : temporal_edge[t]) {
+            addEdge(e.first, e.second, t);
+        }
     }
 }
 

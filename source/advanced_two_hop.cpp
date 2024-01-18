@@ -176,27 +176,17 @@ void AdvancedTwoHopIndex::construct_for_a_vertex(TemporalGraph* G, int u, bool r
                                                 std::vector<std::vector<int>> &next_idx, 
                                                 std::vector<std::vector<int>> &cut_idx,
                                                 int t_threshold) {
-    std::unordered_set<int> affected_vertices;
-    std::vector<std::vector<std::vector<int>>> inc_index;
-    inc_index.resize(G->n);
-    std::vector<std::vector<std::pair<int, int>>> binary_indexed_tree;
-    binary_indexed_tree.resize(G->n);
-    std::queue<std::vector<int>> Q;
-    std::vector<int> start;
-    start.push_back(u);
-    start.push_back(G->tmax + 1);
-    start.push_back(-1);
-    start.push_back(0);
-    Q.push(start);
+    for (auto u : affected_vertices) {
+        inc_index[u].clear();
+        binary_indexed_tree[u] = std::vector<std::pair<int, int>>();
+    }
+    affected_vertices.clear();
+    Q.push(std::vector<int>{u, G->tmax + 1, -1, 0});
 
     while (!Q.empty()) {
-        std::vector<int> current;
-        current = Q.front();
+        std::vector<int> current = Q.front();
         Q.pop();
-        int v = current[0];
-        int ts = current[1];
-        int te = current[2];
-        int d = current[3];
+        int v = current[0], ts = current[1], te = current[2], d = current[3];
         if (u == v && d > 0) {
             continue;
         }
@@ -211,9 +201,6 @@ void AdvancedTwoHopIndex::construct_for_a_vertex(TemporalGraph* G, int u, bool r
                     break;
                 }
                 t += (t & (-t));
-            }
-            if (flag) {
-                continue;
             }
         }
         if (flag) {
@@ -231,12 +218,7 @@ void AdvancedTwoHopIndex::construct_for_a_vertex(TemporalGraph* G, int u, bool r
             while (next_idx[v].size() < L[v].size()) {
                 next_idx[v].push_back(L[v].size());
             }
-            std::vector<int> next;
-            next.push_back(u);
-            next.push_back(ts);
-            next.push_back(te);
-            next.push_back(d);
-            inc_index[v].push_back(next);
+            inc_index[v].push_back(std::vector<int>{u, ts, te, d});
         }
 
         if (d == k) {
@@ -281,12 +263,7 @@ void AdvancedTwoHopIndex::construct_for_a_vertex(TemporalGraph* G, int u, bool r
                         }
                         t -= (t & (-t));
                     }
-                    std::vector<int> next;
-                    next.push_back(e->to);
-                    next.push_back(ts_new);
-                    next.push_back(te_new);
-                    next.push_back(d + 1);
-                    Q.push(next);
+                    Q.push(std::vector<int>{e->to, ts_new, te_new, d + 1});
                 }
             }
             e = e->next;
@@ -295,8 +272,7 @@ void AdvancedTwoHopIndex::construct_for_a_vertex(TemporalGraph* G, int u, bool r
 
     // Compress all enqueued paths to generate a minimal path set
     for (auto v : affected_vertices) {
-        int i = 0;
-        int j = 0;
+        int i = 0, j = 0;
         std::vector<int> BIT;
         BIT.assign(G->tmax + 2, G->tmax + 1);
         for (i = 0; i <= inc_index[v].size(); i++) {
@@ -330,6 +306,18 @@ void AdvancedTwoHopIndex::construct_for_a_vertex(TemporalGraph* G, int u, bool r
     }
 }
 
+void AdvancedTwoHopIndex::update(TemporalGraph* G, double update_fraction) {
+    int t1 = ceil(G->tmax * (1 - update_fraction));
+    for (int t = t1; t <= G->tmax; t++) {
+        for (auto e : G->temporal_edge[t]) {
+            int u = e.first;
+            int v = e.second;
+            if (order[u] <= order[v]) {
+            }
+        }
+    }
+}
+
 AdvancedTwoHopIndex::AdvancedTwoHopIndex(TemporalGraph* G, int k_input, int t_threshold, std::string path_type) {
     k = k_input;
     L_in.resize(G->n);
@@ -338,6 +326,8 @@ AdvancedTwoHopIndex::AdvancedTwoHopIndex(TemporalGraph* G, int k_input, int t_th
     next_out.resize(G->n);
     cut_in.resize(G->n);
     cut_out.resize(G->n);
+    inc_index.resize(G->n);
+    binary_indexed_tree.resize(G->n);
 
     if (path_type == "Temporal") {
         is_temporal_path = true;
