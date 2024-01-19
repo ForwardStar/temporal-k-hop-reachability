@@ -29,8 +29,6 @@ class AdvancedTwoHopIndex {
 
         bool reachable(TemporalGraph* G, int u, int v, int ts, int te, int d);
 
-        void update(TemporalGraph* G, double update_fraction);
-
         AdvancedTwoHopIndex(TemporalGraph* G, int k_input, int t_threshold, std::string path_type);
         ~AdvancedTwoHopIndex();
         

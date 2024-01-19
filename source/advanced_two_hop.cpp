@@ -306,18 +306,6 @@ void AdvancedTwoHopIndex::construct_for_a_vertex(TemporalGraph* G, int u, bool r
     }
 }
 
-void AdvancedTwoHopIndex::update(TemporalGraph* G, double update_fraction) {
-    int t1 = ceil(G->tmax * (1 - update_fraction));
-    for (int t = t1; t <= G->tmax; t++) {
-        for (auto e : G->temporal_edge[t]) {
-            int u = e.first;
-            int v = e.second;
-            if (order[u] <= order[v]) {
-            }
-        }
-    }
-}
-
 AdvancedTwoHopIndex::AdvancedTwoHopIndex(TemporalGraph* G, int k_input, int t_threshold, std::string path_type) {
     k = k_input;
     L_in.resize(G->n);
