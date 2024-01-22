@@ -186,6 +186,7 @@ TwoHopIndex::TwoHopIndex(TemporalGraph* G, int k_input, int t_threshold, std::st
                     int ts_new = std::min(ts, t);
                     int te_new = std::max(te, t);
                     if (t_threshold == -1 || te_new - ts_new + 1 <= t_threshold) {
+                        visited_paths++;
                         bool flag = false;
                         for (auto it1 = T[w].begin(); it1 != T[w].end(); it1++) {
                             if (it1->first.first >= ts_new && it1->first.second <= te_new) {

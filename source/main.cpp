@@ -61,7 +61,8 @@ int main(int argc, char* argv[]) {
             TwoHopIndex *index = new TwoHopIndex(Graph, k, t_threshold, path_type);
             unsigned long long index_construction_end_time = currentTime();
             std::cout << "Index construction completed in " << timeFormatting(difftime(index_construction_end_time, index_construction_start_time)).str() << std::endl;
-            std::cout << "Number of paths: " << index->size() << std::endl;
+            std::cout << "Number of paths in index: " << index->size() << std::endl;
+            std::cout << "Number of paths visited: " << index->visited_paths << std::endl;
             std::cout << "Solving queries..." << std::endl;
             unsigned long long query_start_time = currentTime();
             index->solve(Graph, argv[i], argv[argc - 1], k);
@@ -80,7 +81,8 @@ int main(int argc, char* argv[]) {
             AdvancedTwoHopIndex *index = new AdvancedTwoHopIndex(Graph, k, t_threshold, path_type);
             unsigned long long index_construction_end_time = currentTime();
             std::cout << "Index construction completed in " << timeFormatting(difftime(index_construction_end_time, index_construction_start_time)).str() << std::endl;
-            std::cout << "Number of paths: " << index->size() << std::endl;
+            std::cout << "Number of paths in index: " << index->size() << std::endl;
+            std::cout << "Number of paths visited: " << index->visited_paths << std::endl;
             std::cout << "Solving queries..." << std::endl;
             unsigned long long query_start_time = currentTime();
             index->solve(Graph, argv[i], argv[argc - 1], k);

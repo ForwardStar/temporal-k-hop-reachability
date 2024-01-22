@@ -240,6 +240,7 @@ void AdvancedTwoHopIndex::construct_for_a_vertex(TemporalGraph* G, int u, bool r
                     e = e->next;
                     continue;
                 }
+                visited_paths++;
                 bool flag = false;
                 if (binary_indexed_tree[e->to].size() > 0) {
                     int t = ts_new + 1;
@@ -273,28 +274,14 @@ void AdvancedTwoHopIndex::construct_for_a_vertex(TemporalGraph* G, int u, bool r
     // Compress all enqueued paths to generate a minimal path set
     for (auto v : affected_vertices) {
         int i = 0, j = 0;
-        std::vector<int> BIT;
-        BIT.assign(G->tmax + 2, G->tmax + 1);
         for (i = 0; i <= inc_index[v].size(); i++) {
             if (i == inc_index[v].size() || (i > 0 && inc_index[v][i][3] != inc_index[v][i - 1][3])) {
                 std::sort(inc_index[v].begin() + j, inc_index[v].begin() + i, cmp1);
+                int cur_tmin = G->tmax + 1;
                 while (j < i) {
-                    int t = inc_index[v][j][1] + 1;
-                    bool flag = false;
-                    while (t <= G->tmax + 1) {
-                        if (BIT[t] <= inc_index[v][j][2]) {
-                            flag = true;
-                            break;
-                        }
-                        t += (t & (-t));
-                    }
-                    if (!flag) {
+                    if (inc_index[v][j][2] < cur_tmin) {
+                        cur_tmin = inc_index[v][j][2];
                         L[v].push_back(inc_index[v][j]);
-                        int t = inc_index[v][j][1] + 1;
-                        while (t > 0) {
-                            BIT[t] = std::min(BIT[t], inc_index[v][j][2]);
-                            t -= (t & (-t));
-                        }
                     }
                     j++;
                 }
