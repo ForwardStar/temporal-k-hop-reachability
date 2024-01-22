@@ -271,7 +271,7 @@ void AdvancedTwoHopIndex::construct_for_a_vertex(TemporalGraph* G, int u, bool r
         }
     }
 
-    // Compress all enqueued paths to generate a minimal path set
+    // Organize all paths in an increasing ts order
     for (auto v : affected_vertices) {
         int i = 0, j = 0;
         for (i = 0; i <= inc_index[v].size(); i++) {
@@ -327,7 +327,14 @@ AdvancedTwoHopIndex::AdvancedTwoHopIndex(TemporalGraph* G, int k_input, int t_th
     for (auto it = vertex_set.begin(); it != vertex_set.end(); it++) {
         int u = it->first;
         construct_for_a_vertex(G, u, false, L_in, next_in, cut_in, t_threshold);
-        construct_for_a_vertex(G, u, true, L_out, next_out, cut_out, t_threshold);
+        if (G->is_directed) {
+            construct_for_a_vertex(G, u, true, L_out, next_out, cut_out, t_threshold);
+        }
+        else {
+            L_out = L_in;
+            next_out = next_in;
+            cut_out = cut_in;
+        }
         putProcess(double(++i) / G->n, currentTime() - start_time);
     }
 }
