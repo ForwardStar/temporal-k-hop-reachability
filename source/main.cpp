@@ -1,7 +1,7 @@
 #include "commonfunctions.h"
 #include "temporal_graph.h"
 #include "online_search.h"
-#include "two_hop_index.h"
+#include "baseline.h"
 #include "advanced_two_hop.h"
 
 bool debug = false;
@@ -46,7 +46,7 @@ int main(int argc, char* argv[]) {
         for (int i = 2; i < argc - 1; i++) {
             std::cout << "Running online search..." << std::endl;
             unsigned long long online_search_start_time = currentTime();
-            online(Graph, argv[i], argv[argc - 1], k, path_type);
+            online(Graph, argv[i], argv[argc - 1], path_type);
             unsigned long long online_search_end_time = currentTime();
             std::cout << "Online search completed in " << timeFormatting(online_search_end_time - online_search_start_time).str() << std::endl;
         }
@@ -58,14 +58,14 @@ int main(int argc, char* argv[]) {
             std::cout << "Running index..." << std::endl;
             std::cout << "Constructing the index structure..." << std::endl;
             unsigned long long index_construction_start_time = currentTime();
-            TwoHopIndex *index = new TwoHopIndex(Graph, k, t_threshold, path_type);
+            BaselineIndex *index = new BaselineIndex(Graph, k, t_threshold, path_type);
             unsigned long long index_construction_end_time = currentTime();
             std::cout << "Index construction completed in " << timeFormatting(difftime(index_construction_end_time, index_construction_start_time)).str() << std::endl;
             std::cout << "Number of paths in index: " << index->size() << std::endl;
             std::cout << "Number of paths visited: " << index->visited_paths << std::endl;
             std::cout << "Solving queries..." << std::endl;
             unsigned long long query_start_time = currentTime();
-            index->solve(Graph, argv[i], argv[argc - 1], k);
+            index->solve(Graph, argv[i], argv[argc - 1]);
             unsigned long long query_end_time = currentTime();
             std::cout << "Query completed in " << timeFormatting(query_end_time - query_start_time).str() << std::endl;
             std::cout << "Index completed!" << std::endl;
@@ -85,7 +85,7 @@ int main(int argc, char* argv[]) {
             std::cout << "Number of paths visited: " << index->visited_paths << std::endl;
             std::cout << "Solving queries..." << std::endl;
             unsigned long long query_start_time = currentTime();
-            index->solve(Graph, argv[i], argv[argc - 1], k);
+            index->solve(Graph, argv[i], argv[argc - 1]);
             unsigned long long query_end_time = currentTime();
             std::cout << "Query completed in " << timeFormatting(query_end_time - query_start_time).str() << std::endl;
             std::cout << "Index completed!" << std::endl;

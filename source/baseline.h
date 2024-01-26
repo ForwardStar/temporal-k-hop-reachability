@@ -1,7 +1,7 @@
 #include "commonfunctions.h"
 #include "temporal_graph.h"
 
-class TwoHopIndex {
+class BaselineIndex {
     private:
 
     public:
@@ -18,7 +18,7 @@ class TwoHopIndex {
 
         bool reachable(TemporalGraph* G, int u, int v, int ts, int te, int k_input);
 
-        TwoHopIndex(TemporalGraph* G, int k_input, int t_threshold, std::string path_type);
+        BaselineIndex(TemporalGraph* G, int k_input, int t_threshold, std::string path_type);
 
-        void solve(TemporalGraph* G, char* query_file, char* output_file, int k);
+        void solve(TemporalGraph* G, char* query_file, char* output_file);
 };

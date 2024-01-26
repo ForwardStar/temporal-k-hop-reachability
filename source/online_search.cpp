@@ -42,13 +42,13 @@ std::string onlineSearch(TemporalGraph* Graph, int s, int t, int ts, int te, int
     return "Not reachable";
 }
 
-void online(TemporalGraph* Graph, char* query_file, char* output_file, int k, std::string path_type) {
-    int s, t, ts, te;
+void online(TemporalGraph* Graph, char* query_file, char* output_file, std::string path_type) {
+    int s, t, ts, te, k;
     int query_num = 0;
     std::ifstream fin(query_file);
     std::ofstream fout(output_file);
 
-    while (fin >> s >> t >> ts >> te) {
+    while (fin >> s >> t >> ts >> te >> k) {
         ++query_num;
     }
 
@@ -56,7 +56,7 @@ void online(TemporalGraph* Graph, char* query_file, char* output_file, int k, st
 
     int i = 0;
     unsigned long long start_time = currentTime();
-    while (fin >> s >> t >> ts >> te) {
+    while (fin >> s >> t >> ts >> te >> k) {
         // Perform online BFS Search
         fout << onlineSearch(Graph, s, t, ts, te, k, path_type) << std::endl;
         putProcess(double(++i) / query_num, currentTime() - start_time);

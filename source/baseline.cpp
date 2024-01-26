@@ -1,4 +1,4 @@
-#include "two_hop_index.h"
+#include "baseline.h"
 
 bool cmp(std::pair<int, int> i, std::pair<int, int> j) {
     return i.first > j.first || (i.first == j.first && i.second < j.second);
@@ -8,7 +8,7 @@ bool cmp1(std::pair<std::pair<int, int>, int> i, std::pair<std::pair<int, int>, 
     return i.second < j.second;
 }
 
-int TwoHopIndex::size() {
+int BaselineIndex::size() {
     int num_intervals = 0;
     for (auto it = L.begin(); it != L.end(); it++) {
         for (auto it1 = it->begin(); it1 != it->end(); it1++) {
@@ -18,7 +18,20 @@ int TwoHopIndex::size() {
     return num_intervals;
 }
 
-bool TwoHopIndex::reachable(TemporalGraph* G, int u, int v, int ts, int te, int k_input) {
+bool BaselineIndex::reachable(TemporalGraph* G, int u, int v, int ts, int te, int k_input) {
+    if (k_input == 1) {
+        if (u == v) {
+            return true;
+        }
+        TemporalGraph::Edge* e = G->getHeadEdge(u);
+        while (e) {
+            if (e->interaction_time >= ts && e->interaction_time <= te && e->to == v) {
+                return true;
+            }
+            e = e->next;
+        }
+        return false;
+    }
     if (u == v) {
         return true;
     }
@@ -62,12 +75,12 @@ bool TwoHopIndex::reachable(TemporalGraph* G, int u, int v, int ts, int te, int 
             if (L[i].find(v) == L[i].end()) {
                 return false;
             }
-            for (int j = k - 2; j <= k_input; j++) {
+            for (int j = 1; j <= k_input; j++) {
                 int l = 0;
-                if (j > k - 2) {
-                    l = cut[i][v][j - 1 - (k - 2)];
+                if (j > 1) {
+                    l = cut[i][v][j - 2];
                 }
-                int r = cut[i][v][j - (k - 2)] - 1;
+                int r = cut[i][v][j - 1] - 1;
                 if (l > r) {
                     continue;
                 }
@@ -102,7 +115,7 @@ bool TwoHopIndex::reachable(TemporalGraph* G, int u, int v, int ts, int te, int 
     }
 }
 
-TwoHopIndex::TwoHopIndex(TemporalGraph* G, int k_input, int t_threshold, std::string path_type) {
+BaselineIndex::BaselineIndex(TemporalGraph* G, int k_input, int t_threshold, std::string path_type) {
     k = k_input;
     if (path_type == "Temporal") {
         is_temporal_path = true;
@@ -216,28 +229,9 @@ TwoHopIndex::TwoHopIndex(TemporalGraph* G, int k_input, int t_threshold, std::st
         for (auto v : Vs) {
             L[i - 1][v] = std::vector<std::pair<int, int>>();
             cut[i - 1][v] = std::vector<int>();
-            intervals.clear();
-            std::vector<std::pair<std::pair<int, int>, int>>::iterator it1;
-            for (it1 = T[v].begin(); it1 != T[v].end(); it1++) {
-                if (it1->second <= k - 2) {
-                    intervals.push_back(it1->first);
-                }
-                else {
-                    break;
-                }
-            }
-            std::sort(intervals.begin(), intervals.end(), cmp);
-            int tmin = G->tmax + 1;
-            for (auto it2 = intervals.begin(); it2 != intervals.end(); it2++) {
-                if (tmin > it2->second) {
-                    tmin = it2->second;
-                    L[i - 1][v].push_back(*it2);
-                }
-            }
-            cut[i - 1][v].push_back(L[i - 1][v].size());
-            for (int j = k - 1; j <= k; j++) {
+            for (int j = 1; j <= k; j++) {
                 intervals.clear();
-                for (it1; it1 != T[v].end(); it1++) {
+                for (auto it1 = T[v].begin(); it1 != T[v].end(); it1++) {
                     if (it1->second > j) {
                         break;
                     }
@@ -246,7 +240,7 @@ TwoHopIndex::TwoHopIndex(TemporalGraph* G, int k_input, int t_threshold, std::st
                 std::sort(intervals.begin(), intervals.end(), cmp);
                 int tmin = G->tmax + 1;
                 for (auto it2 = intervals.begin(); it2 != intervals.end(); it2++) {
-                    if (tmin > it2->second && !reachable(G, u, v, it2->first, it2->second, j - 1)) {
+                    if (tmin > it2->second) {
                         tmin = it2->second;
                         L[i - 1][v].push_back(*it2);
                     }
@@ -259,13 +253,13 @@ TwoHopIndex::TwoHopIndex(TemporalGraph* G, int k_input, int t_threshold, std::st
     }
 }
 
-void TwoHopIndex::solve(TemporalGraph* G, char* query_file, char* output_file, int k) {
-    int s, t, ts, te;
+void BaselineIndex::solve(TemporalGraph* G, char* query_file, char* output_file) {
+    int s, t, ts, te, k;
     int query_num = 0;
     std::ifstream fin(query_file);
     std::ofstream fout(output_file);
 
-    while (fin >> s >> t >> ts >> te) {
+    while (fin >> s >> t >> ts >> te >> k) {
         ++query_num;
     }
 
@@ -273,7 +267,7 @@ void TwoHopIndex::solve(TemporalGraph* G, char* query_file, char* output_file, i
 
     int i = 0;
     unsigned long long start_time = currentTime();
-    while (fin >> s >> t >> ts >> te) {
+    while (fin >> s >> t >> ts >> te >> k) {
         // Perform online BFS Search
         if (reachable(G, s, t, ts, te, k)) {
             fout << "Reachable" << std::endl;

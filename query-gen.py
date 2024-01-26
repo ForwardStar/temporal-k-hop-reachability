@@ -25,8 +25,9 @@ if __name__ == "__main__":
         print("Invalid input! Program terminated.")
         exit()
     length = int(tmax * float(input("Enter the length of the query windows (0 < x < 1): ")))
+    k = int(input("Enter k: "))
     for i in range(num_of_queries):
         u, v = random.randint(1, n), random.randint(1, n)
         ts = random.randint(0, tmax - length)
-        contents += str(u) + " " + str(v) + " " + str(ts) + " " + str(ts + length) + " " + "\n"
+        contents += str(u) + " " + str(v) + " " + str(ts) + " " + str(ts + length) + " " + str(random.randint(1, k)) + " " + "\n"
     open("query.txt", "w").write(contents)
