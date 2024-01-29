@@ -11,12 +11,12 @@ class AdvancedTwoHopIndex {
         int find_index(std::vector<int> &L_in_neighbours, int u);
 
         void construct_for_a_vertex(TemporalGraph* G, int u, bool reverse, 
-                                    std::vector<std::vector<std::vector<std::vector<std::pair<int, int>>>>> &L,
+                                    std::vector<std::vector<std::vector<std::pair<int, std::vector<std::pair<int, int>>>>>> &L,
                                     std::vector<std::vector<int>> &L_neighbours,
                                     int t_threshold);
         
     public:
-        std::vector<std::vector<std::vector<std::vector<std::pair<int, int>>>>> L_in, L_out;
+        std::vector<std::vector<std::vector<std::pair<int, std::vector<std::pair<int, int>>>>>> L_in, L_out;
         std::vector<std::vector<int>> L_in_neighbours, L_out_neighbours;
         
         bool is_temporal_path;
