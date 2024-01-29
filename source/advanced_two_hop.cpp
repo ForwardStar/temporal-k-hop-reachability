@@ -5,7 +5,7 @@ bool cmp(std::pair<int, long long> i, std::pair<int, long long> j) {
 }
 
 bool cmp1(std::vector<int> i, std::vector<int> j) {
-    return i[1] > j[1] || (i[1] == j[1] && i[2] < j[2]);
+    return i[0] > j[0] || (i[0] == j[0] && i[1] < j[1]);
 }
 
 int AdvancedTwoHopIndex::size() {
@@ -13,18 +13,38 @@ int AdvancedTwoHopIndex::size() {
     for (int u = 0; u < L_out.size(); u++) {
         for (auto s : L_out[u]) {
             for (int d = 0; d < k; d++) {
-                num_intervals += s.second[d].size();
+                num_intervals += s[d].size();
             }
         }
     }
     for (int u = 0; u < L_in.size(); u++) {
         for (auto s : L_in[u]) {
             for (int d = 0; d < k; d++) {
-                num_intervals += s.second[d].size();
+                num_intervals += s[d].size();
             }
         }
     }
     return num_intervals;
+}
+
+int AdvancedTwoHopIndex::find_index(std::vector<int> &L_neighbours, int u) {
+    int l = 0;
+    int r = L_neighbours.size() - 1;
+    while (l < r) {
+        int mid = l + r >> 1;
+        if (order[L_neighbours[mid]] < order[u]) {
+            l = mid + 1;
+        }
+        else {
+            r = mid;
+        }
+    }
+    if (L_neighbours.size() > 0 && L_neighbours[l] == u) {
+        return l;
+    }
+    else {
+        return -1;
+    }
 }
 
 bool AdvancedTwoHopIndex::reachable(TemporalGraph* G, int u, int v, int ts, int te, int k) {
@@ -32,88 +52,106 @@ bool AdvancedTwoHopIndex::reachable(TemporalGraph* G, int u, int v, int ts, int 
         return true;
     }
 
-    if (L_out[u].find(v) != L_out[u].end()) {
+    int idx = find_index(L_out_neighbours[u], v);
+    if (idx != -1) {
         for (int d = 0; d < k; d++) {
             int l = 0;
-            int r = L_out[u][v][d].size() - 1;
+            int r = L_out[u][idx][d].size() - 1;
             if (l > r) {
                 continue;
             }
             while (l < r) {
                 int mid = l + r + 1 >> 1;
-                if (L_out[u][v][d][mid][1] < ts) {
+                if (L_out[u][idx][d][mid].first < ts) {
                     r = mid - 1;
                 }
                 else {
                     l = mid;
                 }
             }
-            if (L_out[u][v][d][l][1] >= ts && L_out[u][v][d][l][2] <= te) {
+            if (L_out[u][idx][d][l].first >= ts && L_out[u][idx][d][l].second <= te) {
                 return true;
             }
         }
     }
 
-    if (L_in[v].find(u) != L_in[v].end()) {
+    idx = find_index(L_in_neighbours[v], u);
+    if (idx != -1) {
         for (int d = 0; d < k; d++) {
             int l = 0;
-            int r = L_in[v][u][d].size() - 1;
+            int r = L_in[v][idx][d].size() - 1;
             if (l > r) {
                 continue;
             }
             while (l < r) {
                 int mid = l + r + 1 >> 1;
-                if (L_in[v][u][d][mid][1] < ts) {
+                if (L_in[v][idx][d][mid].first < ts) {
                     r = mid - 1;
                 }
                 else {
                     l = mid;
                 }
             }
-            if (L_in[v][u][d][l][1] >= ts && L_in[v][u][d][l][2] <= te) {
+            if (L_in[v][idx][d][l].first >= ts && L_in[v][idx][d][l].second <= te) {
                 return true;
             }
         }
     }
 
-    for (auto s : L_out[u]) {
-        int w = s.first;
-        if (L_in[v].find(w) != L_in[v].end()) {
-            for (int d1 = 0; d1 < k - 1; d1++) {
+    int j = 0;
+    for (int i = 0; i < L_out_neighbours[u].size(); i++) {
+        int w = L_out_neighbours[u][i];
+        while (j < L_in_neighbours[v].size() && order[L_in_neighbours[v][j]] < order[w]) {
+            j++;
+        }
+        if (j >= L_in_neighbours[v].size()) {
+            break;
+        }
+        if (w == L_in_neighbours[v][j]) {
+            int ts_max = -1;
+            int te_min = G->tmax + 1;
+            int d2 = 0;
+            for (int d1 = k - 2; d1 >= 0; d1--) {
                 int l = 0;
-                int r = L_out[u][w][d1].size() - 1;
+                int r = L_out[u][i][d1].size() - 1;
                 if (l > r) {
                     continue;
                 }
                 while (l < r) {
                     int mid = l + r + 1 >> 1;
-                    if (L_out[u][w][d1][mid][1] < ts) {
+                    if (L_out[u][i][d1][mid].first < ts) {
                         r = mid - 1;
                     }
                     else {
                         l = mid;
                     }
                 }
-                if (L_out[u][w][d1][l][1] >= ts && L_out[u][w][d1][l][2] <= te) {
-                    int t1 = L_out[u][w][d1][l][2];
-                    for (int d2 = 0; d2 <= k - d1 - 2; d2++) {
+                if (L_out[u][i][d1][l].first >= ts && L_out[u][i][d1][l].second <= te) {
+                    int t1 = L_out[u][i][d1][l].second;
+                    while (d1 + d2 + 2 <= k) {
                         int l = 0;
-                        int r = L_in[v][w][d2].size() - 1;
+                        int r = L_in[v][j][d2].size() - 1;
                         if (l > r) {
+                            d2++;
                             continue;
                         }
                         while (l < r) {
-                            int mid = l + r + 1 >> 1;
-                            if ((!is_temporal_path && L_in[v][w][d2][mid][1] < ts) || (is_temporal_path && L_in[v][w][d2][mid][1] < t1)) {
-                                r = mid - 1;
+                            int mid = l + r >> 1;
+                            if (L_in[v][j][d2][mid].second > te) {
+                                l = mid + 1;
                             }
                             else {
-                                l = mid;
+                                r = mid;
                             }
                         }
-                        if (((!is_temporal_path && L_in[v][w][d2][l][1] >= ts) || (is_temporal_path && L_in[v][w][d2][l][1] >= t1)) && L_in[v][w][d2][l][2] <= te) {
-                            return true;
+                        if (L_in[v][j][d2][l].first >= ts && L_in[v][j][d2][l].second <= te && L_in[v][j][d2][l].first >= ts_max) {
+                            ts_max = L_in[v][j][d2][l].first;
+                            te_min = L_in[v][j][d2][l].second;
                         }
+                        d2++;
+                    }
+                    if (((!is_temporal_path && ts_max >= ts) || (is_temporal_path && ts_max >= t1)) && te_min <= te) {
+                        return true;
                     }
                 }
             }
@@ -123,7 +161,10 @@ bool AdvancedTwoHopIndex::reachable(TemporalGraph* G, int u, int v, int ts, int 
     return false;
 }
 
-void AdvancedTwoHopIndex::construct_for_a_vertex(TemporalGraph* G, int u, bool reverse, std::vector<std::unordered_map<int, std::vector<std::vector<std::vector<int>>>>> &L, int t_threshold) {
+void AdvancedTwoHopIndex::construct_for_a_vertex(TemporalGraph* G, int u, bool reverse, 
+                                                std::vector<std::vector<std::vector<std::vector<std::pair<int, int>>>>> &L,
+                                                std::vector<std::vector<int>> &L_neighbours,
+                                                int t_threshold) {
     for (auto u : affected_vertices) {
         temp_paths[u].clear();
         binary_indexed_tree[u] = std::vector<std::pair<int, int>>();
@@ -162,7 +203,7 @@ void AdvancedTwoHopIndex::construct_for_a_vertex(TemporalGraph* G, int u, bool r
 
         // Insert the path into the index
         if (u != v) {
-            temp_paths[v].push_back(std::vector<int>{u, ts, te, d});
+            temp_paths[v].push_back(std::vector<int>{ts, te, d});
             affected_vertices.insert(v);
         }
 
@@ -218,18 +259,20 @@ void AdvancedTwoHopIndex::construct_for_a_vertex(TemporalGraph* G, int u, bool r
 
     // Organize all paths in an increasing ts order
     for (auto v : affected_vertices) {
-        L[v][u] = std::vector<std::vector<std::vector<int>>>();
-        L[v][u].resize(k);
+        int idx = L[v].size();
+        L_neighbours[v].push_back(u);
+        L[v].push_back(std::vector<std::vector<std::pair<int, int>>>());
+        L[v][idx].resize(k);
         int i = 0, j = 0;
         for (i = 0; i <= temp_paths[v].size(); i++) {
-            if (i == temp_paths[v].size() || (i > 0 && temp_paths[v][i][3] != temp_paths[v][i - 1][3])) {
+            if (i == temp_paths[v].size() || (i > 0 && temp_paths[v][i][2] != temp_paths[v][i - 1][2])) {
                 std::sort(temp_paths[v].begin() + j, temp_paths[v].begin() + i, cmp1);
-                int d = temp_paths[v][j][3] - 1;
+                int d = temp_paths[v][j][2] - 1;
                 int cur_tmin = G->tmax + 1;
                 while (j < i) {
-                    if (temp_paths[v][j][2] < cur_tmin) {
-                        cur_tmin = temp_paths[v][j][2];
-                        L[v][u][d].push_back(temp_paths[v][j]);
+                    if (temp_paths[v][j][1] < cur_tmin) {
+                        cur_tmin = temp_paths[v][j][1];
+                        L[v][idx][d].push_back(std::make_pair(temp_paths[v][j][0], temp_paths[v][j][1]));
                     }
                     j++;
                 }
@@ -242,6 +285,8 @@ AdvancedTwoHopIndex::AdvancedTwoHopIndex(TemporalGraph* G, int k_input, int t_th
     k = k_input;
     L_in.resize(G->n);
     L_out.resize(G->n);
+    L_in_neighbours.resize(G->n);
+    L_out_neighbours.resize(G->n);
     temp_paths.resize(G->n);
     binary_indexed_tree.resize(G->n);
 
@@ -267,8 +312,8 @@ AdvancedTwoHopIndex::AdvancedTwoHopIndex(TemporalGraph* G, int k_input, int t_th
     int i = 0;
     for (auto it = vertex_set.begin(); it != vertex_set.end(); it++) {
         int u = it->first;
-        construct_for_a_vertex(G, u, false, L_in, t_threshold);
-        construct_for_a_vertex(G, u, true, L_out, t_threshold);
+        construct_for_a_vertex(G, u, false, L_in, L_in_neighbours, t_threshold);
+        construct_for_a_vertex(G, u, true, L_out, L_out_neighbours, t_threshold);
         putProcess(double(++i) / G->n, currentTime() - start_time);
     }
 }
