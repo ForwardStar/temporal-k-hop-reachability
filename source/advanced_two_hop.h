@@ -5,7 +5,7 @@ class AdvancedTwoHopIndex {
     private:
         std::unordered_set<int> affected_vertices;
         std::vector<std::vector<std::vector<int>>> temp_paths;
-        std::vector<std::vector<std::pair<int, int>>> binary_indexed_tree;
+        std::vector<std::vector<int>> binary_indexed_tree;
         std::queue<std::vector<int>> Q;
 
         int find_index(std::vector<int> &L_in_neighbours, int u);

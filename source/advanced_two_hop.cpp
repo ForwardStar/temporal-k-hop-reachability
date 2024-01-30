@@ -171,10 +171,14 @@ void AdvancedTwoHopIndex::construct_for_a_vertex(TemporalGraph* G, int u, bool r
                                                 int t_threshold) {
     for (auto u : affected_vertices) {
         temp_paths[u].clear();
-        binary_indexed_tree[u] = std::vector<std::pair<int, int>>();
+        binary_indexed_tree[u] = std::vector<int>();
     }
     affected_vertices.clear();
     Q.push(std::vector<int>{u, G->tmax + 1, -1, 0});
+    int cur_len = 0;
+    std::vector<std::vector<int>> cur_paths;
+    std::vector<std::vector<int>> temp_binary_indexed_tree;
+    temp_binary_indexed_tree.resize(G->n);
 
     while (!Q.empty()) {
         std::vector<int> current = Q.front();
@@ -184,12 +188,31 @@ void AdvancedTwoHopIndex::construct_for_a_vertex(TemporalGraph* G, int u, bool r
             continue;
         }
 
+        if (d > cur_len) {
+            cur_len = d;
+            for (auto e : cur_paths) {
+                int v = e[0];
+                temp_binary_indexed_tree[v].clear();
+                int ts_e = e[1];
+                int te_e = e[2];
+                if (binary_indexed_tree[v].size() == 0) {
+                    binary_indexed_tree[v].assign(G->tmax + 2, G->tmax + 1);
+                }
+                int t = ts_e + 1;
+                while (t) {
+                    binary_indexed_tree[v][t] = std::min(binary_indexed_tree[v][t], te_e);
+                    t -= (t & (-t));
+                }
+            }
+            cur_paths.clear();
+        }
+
         // Check minimality to avoid expanding non-minimal paths
         bool flag = false;
         if (binary_indexed_tree[v].size() > 0) {
             int t = ts + 1;
             while (t <= G->tmax + 1) {
-                if (binary_indexed_tree[v][t].first < te && binary_indexed_tree[v][t].second == d) {
+                if (binary_indexed_tree[v][t] < te) {
                     flag = true;
                     break;
                 }
@@ -235,7 +258,7 @@ void AdvancedTwoHopIndex::construct_for_a_vertex(TemporalGraph* G, int u, bool r
                 if (binary_indexed_tree[e->to].size() > 0) {
                     int t = ts_new + 1;
                     while (t <= G->tmax + 1) {
-                        if (binary_indexed_tree[e->to][t].first <= te_new) {
+                        if (binary_indexed_tree[e->to][t] <= te_new) {
                             flag = true;
                             break;
                         }
@@ -243,18 +266,28 @@ void AdvancedTwoHopIndex::construct_for_a_vertex(TemporalGraph* G, int u, bool r
                     }
                 }
                 if (!flag) {
-                    if (binary_indexed_tree[e->to].size() == 0) {
-                        binary_indexed_tree[e->to].assign(G->tmax + 2, std::make_pair(G->tmax + 1, 0));
-                    }
-                    int t = ts_new + 1;
-                    while (t > 0) {
-                        if (te < binary_indexed_tree[e->to][t].first) {
-                            binary_indexed_tree[e->to][t].first = te_new;
-                            binary_indexed_tree[e->to][t].second = d + 1;
+                    if (temp_binary_indexed_tree[e->to].size() > 0) {
+                        int t = ts_new + 1;
+                        while (t <= G->tmax + 1) {
+                            if (temp_binary_indexed_tree[e->to][t] <= te_new) {
+                                flag = true;
+                                break;
+                            }
+                            t += (t & (-t));
                         }
-                        t -= (t & (-t));
                     }
-                    Q.push(std::vector<int>{e->to, ts_new, te_new, d + 1});
+                    if (!flag) {
+                        if (temp_binary_indexed_tree[e->to].size() == 0) {
+                            temp_binary_indexed_tree[e->to].assign(G->tmax + 2, G->tmax + 1);
+                        }
+                        int t = ts_new + 1;
+                        while (t) {
+                            temp_binary_indexed_tree[e->to][t] = std::min(temp_binary_indexed_tree[e->to][t], te_new);
+                            t -= (t & (-t));
+                        }
+                        cur_paths.push_back(std::vector<int>{e->to, ts_new, te_new});
+                        Q.push(std::vector<int>{e->to, ts_new, te_new, d + 1});
+                    }
                 }
             }
             e = e->next;
