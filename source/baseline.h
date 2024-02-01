@@ -12,7 +12,7 @@ class BaselineIndex {
 
         bool is_temporal_path = false;
         int k = 0;
-        int visited_paths = 0;
+        long long visited_paths = 0;
 
         int size();
 
