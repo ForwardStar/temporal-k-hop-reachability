@@ -1,54 +1,5 @@
 #include "temporal_graph.h"
 
-void TemporalGraph::tarjan(int now, int &t) {
-    dfsOrder[now] = ++t;
-    lowestOrder[now] = t;
-    Vis[now] = true;
-    Stack.push(now);
-
-    TemporalGraph::Edge* edge = getHeadEdge(now);
-    
-    while (edge) {
-        if (!Vis[edge->to]) {
-            tarjan(edge->to, t);
-        }
-        if (!outOfStack[edge->to]) {
-            lowestOrder[now] = std::min(lowestOrder[now], lowestOrder[edge->to]);
-        }
-        edge = edge->next;
-    }
-
-    if (dfsOrder[now] == lowestOrder[now]) {
-        std::vector<int> CurrentSCC;
-        while (Stack.top() != now) {
-            outOfStack[Stack.top()] = true;
-            CurrentSCC.push_back(Stack.top());
-            Stack.pop();
-        }
-        outOfStack[Stack.top()] = true;
-        CurrentSCC.push_back(Stack.top());
-        Stack.pop();
-        AllSCC.push_back(CurrentSCC);
-    }
-}
-
-std::vector<std::vector<int>> TemporalGraph::findSCC() {
-    dfsOrder.resize(n);
-    lowestOrder.resize(n);
-    outOfStack.assign(n, 0);
-    Vis.assign(n, 0);
-    AllSCC.clear();
-
-    int t = 0;
-    for (int u = 0; u < n; u++) {
-        if (!Vis[u]) {
-            tarjan(u, t);
-        }
-    }
-    
-    return AllSCC;
-}
-
 int TemporalGraph::numOfVertices() {
     return n;
 }
@@ -69,6 +20,23 @@ TemporalGraph::Edge* TemporalGraph::getNextEdge(Edge* e) {
     return e->next;
 }
 
+TemporalGraph::Edge* TemporalGraph::deleteEdge(Edge* e) {
+    int u = e->from;
+    if (head_edge[u] == e) {
+        head_edge[u] = e->next;
+    }
+    if (head_in_edge[u] == e) {
+        head_in_edge[u] = e->next;
+    }
+    if (e->last) {
+        e->last->next = e->next;
+    }
+    if (e->next) {
+        e->next->last = e->last;
+    }
+    return e->next;
+}
+
 int TemporalGraph::getDestination(Edge* e) {
     return e->to;
 }
@@ -77,21 +45,34 @@ int TemporalGraph::getInteractionTime(Edge* e) {
     return e->interaction_time;
 }
 
+void TemporalGraph::updateInfo() {
+    m = 0;
+    for (int u = 0; u < n; u++) {
+        Edge* e = getHeadEdge(u);
+        while (e) {
+            m++;
+            e = e->next;
+        }
+    }
+}
+
 void TemporalGraph::addEdge(int u, int v, int t, bool repeat) {
     m++;
     degree[u]++;
     if (head_edge[u]) {
-        head_edge[u] = new Edge(v, t, head_edge[u]);
+        head_edge[u]->last = new Edge(u, v, t, head_edge[u]);
+        head_edge[u] = head_edge[u]->last;
     }
     else {
-        head_edge[u] = new Edge(v, t, nullptr);
+        head_edge[u] = new Edge(u, v, t, nullptr);
     }
     in_degree[v]++;
     if (head_in_edge[v]) {
-        head_in_edge[v] = new Edge(u, t, head_in_edge[v]);
+        head_in_edge[v]->last = new Edge(v, u, t, head_in_edge[v]);
+        head_in_edge[v] = head_in_edge[v]->last;
     }
     else {
-        head_in_edge[v] = new Edge(u, t, nullptr);
+        head_in_edge[v] = new Edge(v, u, t, nullptr);
     }
     if (!is_directed && repeat) {
         m--;

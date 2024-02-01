@@ -7,6 +7,7 @@ class AdvancedTwoHopIndex {
         std::vector<std::vector<std::vector<int>>> temp_paths;
         std::vector<std::vector<int>> binary_indexed_tree;
         std::queue<std::vector<int>> Q;
+        std::vector<std::pair<TemporalGraph::Edge*, bool>> deleted_edges;
 
         int find_index(std::vector<int> &L_in_neighbours, int u);
 

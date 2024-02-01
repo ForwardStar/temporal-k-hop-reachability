@@ -23,7 +23,7 @@ int main(int argc, char* argv[]) {
     std::string sol_type, path_type, graph_type;
     std::cout << "Input the graph type (Undirected/Directed): ";
     std::cin >> graph_type;
-    std::cout << "Input k: ";
+    std::cout << "Input kmax: ";
     std::cin >> k;
     std::cout << "Input maximum size of the query time window: ";
     std::cin >> t_threshold;

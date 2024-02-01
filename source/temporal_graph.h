@@ -4,25 +4,17 @@
 #include "commonfunctions.h"
 
 class TemporalGraph {
-    private:
-        std::vector<int> dfsOrder;
-        std::vector<int> lowestOrder;
-        std::vector<bool> outOfStack;
-        std::vector<bool> Vis;
-        std::stack<int> Stack;
-        std::vector<std::vector<int>> AllSCC;
-        void tarjan(int now, int &t);
-
     public:
         // Edge: the structure of the edges in the temporal graph.
         struct Edge {
             // to: the destination of the edge.
-            int to;
+            int from, to;
             // interaction_time: time of the interaction.
             int interaction_time;
-            // next: the next edge in linked list structure.
+            // next, last: the next/last edge in linked list structure.
             Edge* next;
-            Edge(int v, int t, Edge* nextptr): to(v), interaction_time(t), next(nextptr) {}
+            Edge* last;
+            Edge(int u, int v, int t, Edge* nextptr): from(u), to(v), interaction_time(t), next(nextptr), last(nullptr) {}
             ~Edge() {}
         };
 
@@ -72,11 +64,17 @@ class TemporalGraph {
         // getNextEdge(e): get the next edge of edge e.
         Edge* getNextEdge(Edge* e);
 
+        // deleteEdge(e): delete e and return the next edge of e.
+        Edge* deleteEdge(Edge* e);
+
         // getDestination(e): get the destination of the edge e.
         int getDestination(Edge* e);
 
         // getInteractionTime(e): get the time of the interaction.
         int getInteractionTime(Edge* e);
+
+        // updateInfo(): update the number of edges.
+        void updateInfo();
 
         // addEdge(u, v, t): add an edge (u, v, t) to the graph.
         void addEdge(int u, int v, int t, bool repeat=true);

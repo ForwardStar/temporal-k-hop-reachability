@@ -243,7 +243,8 @@ void AdvancedTwoHopIndex::construct_for_a_vertex(TemporalGraph* G, int u, bool r
         }
         while (e) {
             if (order[e->to] < order[u]) {
-                e = e->next;
+                deleted_edges.push_back(std::make_pair(e, reverse));
+                e = G->deleteEdge(e);
                 continue;
             }
             if (!is_temporal_path || (!reverse && te <= e->interaction_time) || (reverse && ts >= e->interaction_time)) {
@@ -345,7 +346,7 @@ AdvancedTwoHopIndex::AdvancedTwoHopIndex(TemporalGraph* G, int k_input, int t_th
     for (int i = 0; i < vertex_set.size(); i++) {
         order[vertex_set[i].first] = i;
     }
-    std::cout << "Vertex ordering completed. Start constructing index..." << std::endl;
+    std::cout << "Vertex ordering completed. Start constructing the index..." << std::endl;
 
     unsigned long long start_time = currentTime();
     int i = 0;
@@ -353,6 +354,25 @@ AdvancedTwoHopIndex::AdvancedTwoHopIndex(TemporalGraph* G, int k_input, int t_th
         int u = it->first;
         construct_for_a_vertex(G, u, false, L_in, L_in_neighbours, t_threshold);
         construct_for_a_vertex(G, u, true, L_out, L_out_neighbours, t_threshold);
+        for (int i = deleted_edges.size() - 1; i >= 0; i--) {
+            auto e = deleted_edges[i].first;
+            bool in_edge = deleted_edges[i].second; 
+            if (e->last) {
+                e->last->next = e;
+            }
+            else {
+                if (in_edge) {
+                    G->head_in_edge[e->from] = e;
+                }
+                else {
+                    G->head_edge[e->from] = e;
+                }
+            }
+            if (e->next) {
+                e->next->last = e;
+            }
+        }
+        deleted_edges.clear();
         putProcess(double(++i) / G->n, currentTime() - start_time);
     }
 }
