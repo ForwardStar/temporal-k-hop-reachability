@@ -171,14 +171,13 @@ void AdvancedTwoHopIndex::construct_for_a_vertex(TemporalGraph* G, int u, bool r
                                                 int t_threshold) {
     for (auto u : affected_vertices) {
         temp_paths[u].clear();
-        binary_indexed_tree[u] = std::vector<int>();
+        binary_indexed_tree[u].clear();
+        temp_binary_indexed_tree[u].clear();
     }
     affected_vertices.clear();
     Q.push(std::vector<int>{u, G->tmax + 1, -1, 0});
     int cur_len = 0;
     std::vector<std::vector<int>> cur_paths;
-    std::vector<std::vector<int>> temp_binary_indexed_tree;
-    temp_binary_indexed_tree.resize(G->n);
 
     while (!Q.empty()) {
         std::vector<int> current = Q.front();
@@ -329,6 +328,7 @@ AdvancedTwoHopIndex::AdvancedTwoHopIndex(TemporalGraph* G, int k_input, int t_th
     L_out_neighbours.resize(G->n);
     temp_paths.resize(G->n);
     binary_indexed_tree.resize(G->n);
+    temp_binary_indexed_tree.resize(G->n);
 
     if (path_type == "Temporal") {
         is_temporal_path = true;
