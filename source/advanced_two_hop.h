@@ -26,7 +26,7 @@ class AdvancedTwoHopIndex {
         long long visited_paths = 0;
         int* order;
 
-        int size();
+        long long size();
 
         bool reachable(TemporalGraph* G, int u, int v, int ts, int te, int k);
 

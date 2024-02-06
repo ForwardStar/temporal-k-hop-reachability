@@ -8,8 +8,8 @@ bool cmp1(std::pair<std::pair<int, int>, int> i, std::pair<std::pair<int, int>, 
     return i.second < j.second;
 }
 
-int BaselineIndex::size() {
-    int num_intervals = 0;
+long long BaselineIndex::size() {
+    long long num_intervals = 0;
     for (auto it = L.begin(); it != L.end(); it++) {
         for (auto it1 = it->begin(); it1 != it->end(); it1++) {
             num_intervals += it1->second.size();

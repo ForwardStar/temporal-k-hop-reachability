@@ -14,7 +14,7 @@ class BaselineIndex {
         int k = 0;
         long long visited_paths = 0;
 
-        int size();
+        long long size();
 
         bool reachable(TemporalGraph* G, int u, int v, int ts, int te, int k_input);
 

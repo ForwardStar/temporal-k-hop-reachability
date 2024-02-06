@@ -8,8 +8,8 @@ bool cmp1(std::vector<int> i, std::vector<int> j) {
     return i[0] > j[0] || (i[0] == j[0] && i[1] < j[1]);
 }
 
-int AdvancedTwoHopIndex::size() {
-    int num_intervals = 0;
+long long AdvancedTwoHopIndex::size() {
+    long long num_intervals = 0;
     for (int u = 0; u < L_out.size(); u++) {
         for (auto s1 : L_out[u]) {
             for (auto s2 : s1) {
