@@ -13,6 +13,7 @@ class BaselineIndex {
         bool is_temporal_path = false;
         int k = 0;
         unsigned long long visited_paths = 0;
+        unsigned long long max_number_of_paths = 0;
 
         unsigned long long size();
 

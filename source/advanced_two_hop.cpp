@@ -27,6 +27,29 @@ unsigned long long AdvancedTwoHopIndex::size() {
     return num_intervals;
 }
 
+unsigned long long AdvancedTwoHopIndex::max_number_of_paths() {
+    unsigned long long res = 0;
+    for (int u = 0; u < L_out.size(); u++) {
+        for (auto s1 : L_out[u]) {
+            unsigned long long tmp = 0;
+            for (auto s2 : s1) {
+                tmp += s2.second.size();
+            }
+            res = std::max(res, tmp);
+        }
+    }
+    for (int u = 0; u < L_in.size(); u++) {
+        for (auto s1 : L_in[u]) {
+            unsigned long long tmp = 0;
+            for (auto s2 : s1) {
+                tmp += s2.second.size();
+            }
+            res = std::max(res, tmp);
+        }
+    }
+    return res;
+}
+
 int AdvancedTwoHopIndex::find_index(std::vector<int> &L_neighbours, int u) {
     int l = 0;
     int r = L_neighbours.size() - 1;

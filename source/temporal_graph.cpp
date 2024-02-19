@@ -74,10 +74,6 @@ void TemporalGraph::addEdge(int u, int v, int t, bool repeat) {
     else {
         head_in_edge[v] = new Edge(v, u, t, nullptr);
     }
-    if (!is_directed && repeat) {
-        m--;
-        addEdge(v, u, t, false);
-    }
 }
 
 TemporalGraph* TemporalGraph::projectedGraph(int ts, int te) {
@@ -85,7 +81,6 @@ TemporalGraph* TemporalGraph::projectedGraph(int ts, int te) {
     G->n = n;
     G->m = 0;
     G->tmax = tmax;
-    G->is_directed = is_directed;
     G->temporal_edge.resize(tmax + 1);
     G->head_edge.assign(n, nullptr);
     G->degree.assign(n, 0);
@@ -105,11 +100,9 @@ TemporalGraph* TemporalGraph::projectedGraph(int ts, int te) {
     return G;
 }
 
-TemporalGraph::TemporalGraph(char* graph_file, std::string graph_type, double fraction) {
+TemporalGraph::TemporalGraph(char* graph_file, double fraction) {
     int u, v, t;
     std::ifstream fin(graph_file);
-
-    is_directed = graph_type == "Directed";
 
     while (fin >> u >> v >> t) {
         n = std::max(n, std::max(u, v) + 1);

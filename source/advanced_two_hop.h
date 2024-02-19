@@ -27,6 +27,7 @@ class AdvancedTwoHopIndex {
         int* order;
 
         unsigned long long size();
+        unsigned long long max_number_of_paths();
 
         bool reachable(TemporalGraph* G, int u, int v, int ts, int te, int k);
 

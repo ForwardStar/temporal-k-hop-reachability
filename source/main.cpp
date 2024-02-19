@@ -6,10 +6,10 @@
 
 bool debug = false;
 
-TemporalGraph* build(char* argv[], std::string graph_type) {
+TemporalGraph* build(char* argv[]) {
     std::cout << "Building graph..." << std::endl;
     unsigned long long build_graph_start_time = currentTime();
-    TemporalGraph* Graph = new TemporalGraph(argv[1], graph_type, 1);
+    TemporalGraph* Graph = new TemporalGraph(argv[1], 1);
     unsigned long long build_graph_end_time = currentTime();
     std::cout << "Build graph success in " << timeFormatting(difftime(build_graph_end_time, build_graph_start_time)).str() << std::endl;
     std::cout << "n = " << Graph->numOfVertices() << ", m = " << Graph->numOfEdges() << ", tmax = " << Graph->tmax << std::endl;
@@ -20,9 +20,7 @@ int main(int argc, char* argv[]) {
     std::ios::sync_with_stdio(false);
 
     int k, t_threshold;
-    std::string sol_type, path_type, graph_type;
-    std::cout << "Input the graph type (Undirected/Directed): ";
-    std::cin >> graph_type;
+    std::string sol_type, path_type;
     std::cout << "Input kmax: ";
     std::cin >> k;
     std::cout << "Input maximum size of the query time window: ";
@@ -39,7 +37,7 @@ int main(int argc, char* argv[]) {
 
     unsigned long long start_time = currentTime();
 
-    TemporalGraph* Graph = build(argv, graph_type);
+    TemporalGraph* Graph = build(argv);
     int vertex_num = Graph->numOfVertices();
 
     if (sol_type == "Online") {
@@ -63,6 +61,7 @@ int main(int argc, char* argv[]) {
             std::cout << "Index construction completed in " << timeFormatting(difftime(index_construction_end_time, index_construction_start_time)).str() << std::endl;
             std::cout << "Number of paths in index: " << index->size() << std::endl;
             std::cout << "Number of paths visited: " << index->visited_paths << std::endl;
+            std::cout << "Maximum number of paths between two vertices stored: " << index->max_number_of_paths << std::endl;
             std::cout << "Solving queries..." << std::endl;
             unsigned long long query_start_time = currentTime();
             index->solve(Graph, argv[i], argv[argc - 1]);
@@ -83,6 +82,7 @@ int main(int argc, char* argv[]) {
             std::cout << "Index construction completed in " << timeFormatting(difftime(index_construction_end_time, index_construction_start_time)).str() << std::endl;
             std::cout << "Number of paths in index: " << index->size() << std::endl;
             std::cout << "Number of paths visited: " << index->visited_paths << std::endl;
+            std::cout << "Maximum number of paths between two vertices stored: " << index->max_number_of_paths() << std::endl;
             std::cout << "Solving queries..." << std::endl;
             unsigned long long query_start_time = currentTime();
             index->solve(Graph, argv[i], argv[argc - 1]);

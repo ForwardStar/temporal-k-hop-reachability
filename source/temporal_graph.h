@@ -43,9 +43,6 @@ class TemporalGraph {
         // temporal_edge[t] --> the edge set at time t.
         std::vector<std::vector<std::pair<int, int>>> temporal_edge;
 
-        // is_directed: whether the graph is a directed graph.
-        bool is_directed;
-
         // findSCC(): find all SCCs in the graph.
         std::vector<std::vector<int>> findSCC();
 
@@ -86,7 +83,6 @@ class TemporalGraph {
             G->n = n;
             G->m = 0;
             G->tmax = tmax;
-            G->is_directed = is_directed;
 
             while (G->head_edge.size() < G->n) {
                 head_edge.push_back(nullptr);
@@ -115,7 +111,7 @@ class TemporalGraph {
         TemporalGraph* projectedGraph(int ts, int te);
 
         TemporalGraph() {}
-        TemporalGraph(char* graph_file, std::string graph_type, double fraction);
+        TemporalGraph(char* graph_file, double fraction);
         ~TemporalGraph();
 };
 
