@@ -19,12 +19,13 @@ TemporalGraph* build(char* argv[]) {
 int main(int argc, char* argv[]) {
     std::ios::sync_with_stdio(false);
 
-    int k, t_threshold;
+    int k;
+    int t_threshold = -1;
     std::string sol_type, path_type;
     std::cout << "Input kmax: ";
     std::cin >> k;
-    std::cout << "Input maximum size of the query time window: ";
-    std::cin >> t_threshold;
+    // std::cout << "Input maximum size of the query time window: ";
+    // std::cin >> t_threshold;
     std::cout << "Input the solution to be used (Online/Baseline/Advanced): ";
     std::cin >> sol_type;
     std::cout << "Input the type of paths to be queried (Temporal/Projected): ";
@@ -61,7 +62,7 @@ int main(int argc, char* argv[]) {
             std::cout << "Index construction completed in " << timeFormatting(difftime(index_construction_end_time, index_construction_start_time)).str() << std::endl;
             std::cout << "Number of paths in index: " << index->size() << std::endl;
             std::cout << "Number of paths visited: " << index->visited_paths << std::endl;
-            std::cout << "Maximum number of paths between two vertices stored: " << index->max_number_of_paths << std::endl;
+            std::cout << "Maximum number of minimal paths between two vertices: " << index->max_number_of_paths << std::endl;
             std::cout << "Solving queries..." << std::endl;
             unsigned long long query_start_time = currentTime();
             index->solve(Graph, argv[i], argv[argc - 1]);
@@ -82,7 +83,7 @@ int main(int argc, char* argv[]) {
             std::cout << "Index construction completed in " << timeFormatting(difftime(index_construction_end_time, index_construction_start_time)).str() << std::endl;
             std::cout << "Number of paths in index: " << index->size() << std::endl;
             std::cout << "Number of paths visited: " << index->visited_paths << std::endl;
-            std::cout << "Maximum number of paths between two vertices stored: " << index->max_number_of_paths() << std::endl;
+            std::cout << "Maximum number of minimal paths between two vertices following ordering constraints: " << index->max_number_of_paths() << std::endl;
             std::cout << "Solving queries..." << std::endl;
             unsigned long long query_start_time = currentTime();
             index->solve(Graph, argv[i], argv[argc - 1]);

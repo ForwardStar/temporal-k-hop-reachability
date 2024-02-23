@@ -179,16 +179,11 @@ BaselineIndex::BaselineIndex(TemporalGraph* G, int k_input, int t_threshold, std
             int v = current[0], ts = current[1], te = current[2], d = current[3];
             // Check minimality to avoid expanding non-minimal paths
             bool flag = false;
-            for (auto it1 = T[v].begin(); it1 != T[v].end();) {
+            for (auto it1 = T[v].begin(); it1 != T[v].end(); it1++) {
                 if (it1->first.first >= ts && it1->first.second <= te && it1->second == d && (it1->first.first != ts || it1->first.second != te)) {
                     flag = true;
                     break;
                 }
-                if (it1->first.first <= ts && it1->first.second >= te && it1->second == d && (it1->first.first != ts || it1->first.second != te)) {
-                    it1 = T[v].erase(it1);
-                    continue;
-                }
-                it1++;
             }
             if (flag) {
                 continue;
@@ -206,11 +201,16 @@ BaselineIndex::BaselineIndex(TemporalGraph* G, int k_input, int t_threshold, std
                     if (t_threshold == -1 || te_new - ts_new + 1 <= t_threshold) {
                         visited_paths++;
                         bool flag = false;
-                        for (auto it1 = T[w].begin(); it1 != T[w].end(); it1++) {
+                        for (auto it1 = T[w].begin(); it1 != T[w].end();) {
                             if (it1->first.first >= ts_new && it1->first.second <= te_new) {
                                 flag = true;
                                 break;
                             }
+                            if (it1->first.first <= ts_new && it1->first.second >= te_new) {
+                                it1 = T[w].erase(it1);
+                                continue;
+                            }
+                            it1++;
                         }
                         if (!flag) {
                             if (w != u && Vs.find(w) == Vs.end() && vertex_cover.find(w) != vertex_cover.end()) {
@@ -230,7 +230,7 @@ BaselineIndex::BaselineIndex(TemporalGraph* G, int k_input, int t_threshold, std
             }
         }
 
-        for (int v = 0; v < G->n; v++) {
+        for (auto v : Vn) {
             max_number_of_paths = std::max(max_number_of_paths, (unsigned long long)T[v].size());
         }
 
