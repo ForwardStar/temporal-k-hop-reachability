@@ -74,14 +74,23 @@ def showProcess():
 def takeThird(triple):
     return triple[2]
 
-def move_data_file(source, destination):
+def move_data_file(source, graph_type, destination):
     if source.endswith(".txt"):
         source = open(os.path.join('datasets', source), "r")
     else:
         source = open(os.path.join(os.path.join('datasets', source), "out." + source), "r")
     lines = source.readlines()
+    output = []
+    for line in lines:
+        output.append(line)
+        if graph_type == 'U':
+            line = line.split()
+            if len(line) >= 2:
+                line[0], line[1] = line[1], line[0]
+                output.append(' '.join(line) + "\n")
     destination = open(destination, "w")
-    destination.writelines(lines)
+    destination.writelines(output)
+    destination.close()
 
 def normalize(filename):
     lines = open(filename, "r").readlines()
@@ -94,7 +103,7 @@ def normalize(filename):
         
         # omit the multiplicity of edges
         line = line.split()
-        contents.append([line[0], line[1], int(line[len(line) - 1])])
+        contents.append([line[0], line[1], int(float(line[len(line) - 1]))])
     
     # normalize
     contents.sort(key=takeThird)
@@ -113,22 +122,21 @@ def normalize(filename):
 
 if __name__ == "__main__":
     # download datasets
-    DATASETS_URL = ["http://konect.cc/files/download.tsv.contact.tar.bz2",
-                    "http://konect.cc/files/download.tsv.mit.tar.bz2",
-                    "http://konect.cc/files/download.tsv.dblp_coauthor.tar.bz2",
-                    "http://konect.cc/files/download.tsv.facebook-wosn-links.tar.bz2",
-                    "http://konect.cc/files/download.tsv.youtube-u-growth.tar.bz2",
-                    "http://konect.cc/files/download.tsv.wikipedia-growth.tar.bz2",
-                    "http://konect.cc/files/download.tsv.dblp-cite.tar.bz2",
-                    "http://konect.cc/files/download.tsv.flickr-growth.tar.bz2",
-                    "http://konect.cc/files/download.tsv.soc-sign-bitcoinotc.tar.bz2",
-                    "https://snap.stanford.edu/data/email-Eu-core-temporal.txt.gz",
-                    "https://snap.stanford.edu/data/CollegeMsg.txt.gz"]
+    DATASETS_URL = [("http://konect.cc/files/download.tsv.contact.tar.bz2", 'U'),
+                    ("http://konect.cc/files/download.tsv.mit.tar.bz2", 'U'),
+                    ("http://konect.cc/files/download.tsv.dblp_coauthor.tar.bz2", 'D'),
+                    ("http://konect.cc/files/download.tsv.facebook-wosn-links.tar.bz2", 'U'),
+                    ("http://konect.cc/files/download.tsv.youtube-u-growth.tar.bz2", 'U'),
+                    ("http://konect.cc/files/download.tsv.wikipedia-growth.tar.bz2", 'D'),
+                    ("http://konect.cc/files/download.tsv.flickr-growth.tar.bz2", 'D'),
+                    ("http://konect.cc/files/download.tsv.soc-sign-bitcoinotc.tar.bz2", 'D'),
+                    ("https://snap.stanford.edu/data/email-Eu-core-temporal.txt.gz", 'D'),
+                    ("https://snap.stanford.edu/data/CollegeMsg.txt.gz", 'D')]
     if os.path.isdir("datasets") is False or len(os.listdir("datasets")) < len(DATASETS_URL):
         need_download = False
         if os.path.isdir("datasets") is False:
             os.mkdir("datasets")
-        for url in DATASETS_URL:
+        for (url, graph_type) in DATASETS_URL:
             path = os.path.join("datasets", url.split('/')[-1])
             if not os.path.exists(path):
                 if (path.split('.')[-1] == "bz2" and not os.path.exists(os.path.join("datasets", path.split('.')[2]))) or \
@@ -175,7 +183,13 @@ if __name__ == "__main__":
         is_finished = False
         thread_move_data_file = threading.Thread(target=showProcess)
         thread_move_data_file.start()
-        move_data_file(file_ls[int(user_input) - 1], "graph.txt")
+        file = file_ls[int(user_input) - 1]
+        graph_type = None
+        for (url, gt) in DATASETS_URL:
+            if file in url:
+                graph_type = gt
+                break
+        move_data_file(file, graph_type, "graph.txt")
         is_finished = True
         thread_move_data_file.join()
     else:
