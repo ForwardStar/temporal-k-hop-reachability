@@ -206,7 +206,7 @@ BaselineIndex::BaselineIndex(TemporalGraph* G, int k_input, int t_threshold, std
                                 flag = true;
                                 break;
                             }
-                            if (it1->first.first <= ts_new && it1->first.second >= te_new) {
+                            if (it1->first.first <= ts_new && it1->first.second >= te_new && it1->second >= d + 1) {
                                 it1 = T[w].erase(it1);
                                 continue;
                             }
