@@ -249,7 +249,7 @@ void AdvancedTwoHopIndex::construct_for_a_vertex(TemporalGraph* G, int u, bool r
         }
 
         // Check minimality to avoid expanding non-minimal paths
-        auto it = cur_minimal_paths[v].lower_bound(std::make_pair(ts, te));
+        auto it = cur_minimal_paths[v].lower_bound(std::make_pair(ts, 0));
         if (it != cur_minimal_paths[v].end() && it->first >= ts && it->second <= te && (it->first != ts || it->second != te)) {
             continue;
         }
@@ -261,6 +261,7 @@ void AdvancedTwoHopIndex::construct_for_a_vertex(TemporalGraph* G, int u, bool r
 
         // Insert the path into the index
         if (u != v) {
+            // std::cout << u << " " << v << " " << ts << " " << te << " " << d << std::endl;
             temp_paths[v].push_back(std::vector<int>{ts, te, d});
             affected_vertices.insert(v);
         }
@@ -287,12 +288,12 @@ void AdvancedTwoHopIndex::construct_for_a_vertex(TemporalGraph* G, int u, bool r
                 }
                 visited_paths++;
                 bool flag = false;
-                auto it = cur_minimal_paths[e->to].lower_bound(std::make_pair(ts_new, te_new));
+                auto it = cur_minimal_paths[e->to].lower_bound(std::make_pair(ts_new, 0));
                 if (it != cur_minimal_paths[e->to].end() && it->first >= ts_new && it->second <= te_new) {
                     flag = true;
                 }
                 if (!flag) {
-                    it = temp_cur_minimal_paths[e->to].lower_bound(std::make_pair(ts_new, te_new));
+                    it = temp_cur_minimal_paths[e->to].lower_bound(std::make_pair(ts_new, 0));
                     if (it != temp_cur_minimal_paths[e->to].end() && it->first >= ts_new && it->second <= te_new) {
                         flag = true;
                     }
