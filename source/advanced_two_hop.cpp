@@ -194,8 +194,8 @@ void AdvancedTwoHopIndex::construct_for_a_vertex(TemporalGraph* G, int u, bool r
                                                 int t_threshold) {
     for (auto u : affected_vertices) {
         temp_paths[u].clear();
-        binary_indexed_tree[u].clear();
-        temp_binary_indexed_tree[u].clear();
+        cur_minimal_paths[u].clear();
+        temp_cur_minimal_paths[u].clear();
     }
     affected_vertices.clear();
     Q.push(std::vector<int>{u, G->tmax + 1, -1, 0});
@@ -214,34 +214,43 @@ void AdvancedTwoHopIndex::construct_for_a_vertex(TemporalGraph* G, int u, bool r
             cur_len = d;
             for (auto e : cur_paths) {
                 int v = e[0];
-                temp_binary_indexed_tree[v].clear();
+                temp_cur_minimal_paths[v].clear();
                 int ts_e = e[1];
                 int te_e = e[2];
-                if (binary_indexed_tree[v].size() == 0) {
-                    binary_indexed_tree[v].assign(G->tmax + 2, G->tmax + 1);
+                auto it = cur_minimal_paths[v].lower_bound(std::make_pair(ts_e, te_e));
+                if (it != cur_minimal_paths[v].end() && it->first >= ts_e && it->second <= te_e) {
+                    continue;
                 }
-                int t = ts_e + 1;
-                while (t) {
-                    binary_indexed_tree[v][t] = std::min(binary_indexed_tree[v][t], te_e);
-                    t -= (t & (-t));
+                if (it == cur_minimal_paths[v].end() && cur_minimal_paths[v].size() > 0) {
+                    it--;
                 }
+                if (it != cur_minimal_paths[v].end() && it != cur_minimal_paths[v].begin() && it->first > ts_e) {
+                    it--;
+                }
+                while (it != cur_minimal_paths[v].end() && it != cur_minimal_paths[v].begin()) {
+                    if (it->first <= ts_e && it->second >= te_e) {
+                        it = cur_minimal_paths[v].erase(it);
+                    }
+                    else {
+                        break;
+                    }
+                    if (cur_minimal_paths[v].size() > 0) {
+                        it--;
+                    }
+                }
+                if (cur_minimal_paths[v].size() > 0 && it == cur_minimal_paths[v].begin()) {
+                    if (it->first <= ts_e && it->second >= te_e) {
+                        cur_minimal_paths[v].erase(it);
+                    }
+                }
+                cur_minimal_paths[v].insert(std::make_pair(ts_e, te_e));
             }
             cur_paths.clear();
         }
 
         // Check minimality to avoid expanding non-minimal paths
-        bool flag = false;
-        if (binary_indexed_tree[v].size() > 0) {
-            int t = ts + 1;
-            while (t <= G->tmax + 1) {
-                if (binary_indexed_tree[v][t] < te) {
-                    flag = true;
-                    break;
-                }
-                t += (t & (-t));
-            }
-        }
-        if (flag) {
+        auto it = cur_minimal_paths[v].lower_bound(std::make_pair(ts, te));
+        if (it != cur_minimal_paths[v].end() && it->first >= ts && it->second <= te && (it->first != ts || it->second != te)) {
             continue;
         }
 
@@ -278,36 +287,39 @@ void AdvancedTwoHopIndex::construct_for_a_vertex(TemporalGraph* G, int u, bool r
                 }
                 visited_paths++;
                 bool flag = false;
-                if (binary_indexed_tree[e->to].size() > 0) {
-                    int t = ts_new + 1;
-                    while (t <= G->tmax + 1) {
-                        if (binary_indexed_tree[e->to][t] <= te_new) {
-                            flag = true;
-                            break;
-                        }
-                        t += (t & (-t));
-                    }
+                auto it = cur_minimal_paths[e->to].lower_bound(std::make_pair(ts_new, te_new));
+                if (it != cur_minimal_paths[e->to].end() && it->first >= ts_new && it->second <= te_new) {
+                    flag = true;
                 }
                 if (!flag) {
-                    if (temp_binary_indexed_tree[e->to].size() > 0) {
-                        int t = ts_new + 1;
-                        while (t <= G->tmax + 1) {
-                            if (temp_binary_indexed_tree[e->to][t] <= te_new) {
-                                flag = true;
-                                break;
-                            }
-                            t += (t & (-t));
-                        }
+                    it = temp_cur_minimal_paths[e->to].lower_bound(std::make_pair(ts_new, te_new));
+                    if (it != temp_cur_minimal_paths[e->to].end() && it->first >= ts_new && it->second <= te_new) {
+                        flag = true;
                     }
                     if (!flag) {
-                        if (temp_binary_indexed_tree[e->to].size() == 0) {
-                            temp_binary_indexed_tree[e->to].assign(G->tmax + 2, G->tmax + 1);
+                        if (it == temp_cur_minimal_paths[e->to].end() && temp_cur_minimal_paths[e->to].size() > 0) {
+                            it--;
                         }
-                        int t = ts_new + 1;
-                        while (t) {
-                            temp_binary_indexed_tree[e->to][t] = std::min(temp_binary_indexed_tree[e->to][t], te_new);
-                            t -= (t & (-t));
+                        if (it != temp_cur_minimal_paths[e->to].end() && it != temp_cur_minimal_paths[e->to].begin() && it->first > ts_new) {
+                            it--;
                         }
+                        while (it != temp_cur_minimal_paths[e->to].end() && it != temp_cur_minimal_paths[e->to].begin()) {
+                            if (it->first <= ts_new && it->second >= te_new) {
+                                it = temp_cur_minimal_paths[e->to].erase(it);
+                            }
+                            else {
+                                break;
+                            }
+                            if (temp_cur_minimal_paths[e->to].size() > 0) {
+                                it--;
+                            }
+                        }
+                        if (temp_cur_minimal_paths[e->to].size() > 0 && it == temp_cur_minimal_paths[e->to].begin()) {
+                            if (it->first <= ts_new && it->second >= te_new) {
+                                temp_cur_minimal_paths[e->to].erase(it);
+                            }
+                        }
+                        temp_cur_minimal_paths[e->to].insert(std::make_pair(ts_new, te_new));
                         cur_paths.push_back(std::vector<int>{e->to, ts_new, te_new});
                         Q.push(std::vector<int>{e->to, ts_new, te_new, d + 1});
                     }
@@ -350,8 +362,8 @@ AdvancedTwoHopIndex::AdvancedTwoHopIndex(TemporalGraph* G, int k_input, int t_th
     L_in_neighbours.resize(G->n);
     L_out_neighbours.resize(G->n);
     temp_paths.resize(G->n);
-    binary_indexed_tree.resize(G->n);
-    temp_binary_indexed_tree.resize(G->n);
+    cur_minimal_paths.resize(G->n);
+    temp_cur_minimal_paths.resize(G->n);
 
     if (path_type == "Temporal") {
         is_temporal_path = true;

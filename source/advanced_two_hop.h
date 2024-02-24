@@ -5,8 +5,8 @@ class AdvancedTwoHopIndex {
     private:
         std::unordered_set<int> affected_vertices;
         std::vector<std::vector<std::vector<int>>> temp_paths;
-        std::vector<std::vector<int>> binary_indexed_tree;
-        std::vector<std::vector<int>> temp_binary_indexed_tree;
+        std::vector<std::set<std::pair<int, int>>> cur_minimal_paths;
+        std::vector<std::set<std::pair<int, int>>> temp_cur_minimal_paths;
         std::queue<std::vector<int>> Q;
         std::vector<std::pair<TemporalGraph::Edge*, bool>> deleted_edges;
 
