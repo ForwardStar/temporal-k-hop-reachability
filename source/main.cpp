@@ -53,16 +53,16 @@ int main(int argc, char* argv[]) {
     }
 
     if (sol_type == "Baseline") {
+        std::cout << "Running index..." << std::endl;
+        std::cout << "Constructing the index structure..." << std::endl;
+        unsigned long long index_construction_start_time = currentTime();
+        BaselineIndex *index = new BaselineIndex(Graph, k, t_threshold, path_type);
+        unsigned long long index_construction_end_time = currentTime();
+        std::cout << "Index construction completed in " << timeFormatting(difftime(index_construction_end_time, index_construction_start_time)).str() << std::endl;
+        std::cout << "Number of paths in index: " << index->size() << std::endl;
+        std::cout << "Number of paths visited: " << index->visited_paths << std::endl;
+        std::cout << "Maximum number of minimal paths between two vertices: " << index->max_number_of_paths << std::endl;
         for (int i = 2; i < argc - 1; i++) {
-            std::cout << "Running index..." << std::endl;
-            std::cout << "Constructing the index structure..." << std::endl;
-            unsigned long long index_construction_start_time = currentTime();
-            BaselineIndex *index = new BaselineIndex(Graph, k, t_threshold, path_type);
-            unsigned long long index_construction_end_time = currentTime();
-            std::cout << "Index construction completed in " << timeFormatting(difftime(index_construction_end_time, index_construction_start_time)).str() << std::endl;
-            std::cout << "Number of paths in index: " << index->size() << std::endl;
-            std::cout << "Number of paths visited: " << index->visited_paths << std::endl;
-            std::cout << "Maximum number of minimal paths between two vertices: " << index->max_number_of_paths << std::endl;
             std::cout << "Solving queries..." << std::endl;
             unsigned long long query_start_time = currentTime();
             index->solve(Graph, argv[i], argv[argc - 1]);
@@ -74,16 +74,16 @@ int main(int argc, char* argv[]) {
     }
 
     if (sol_type == "Advanced") {
+        std::cout << "Running index..." << std::endl;
+        std::cout << "Constructing the index structure..." << std::endl;
+        unsigned long long index_construction_start_time = currentTime();
+        AdvancedTwoHopIndex *index = new AdvancedTwoHopIndex(Graph, k, t_threshold, path_type);
+        unsigned long long index_construction_end_time = currentTime();
+        std::cout << "Index construction completed in " << timeFormatting(difftime(index_construction_end_time, index_construction_start_time)).str() << std::endl;
+        std::cout << "Number of paths in index: " << index->size() << std::endl;
+        std::cout << "Number of paths visited: " << index->visited_paths << std::endl;
+        std::cout << "Maximum number of minimal paths between two vertices following ordering constraints: " << index->max_number_of_paths() << std::endl;
         for (int i = 2; i < argc - 1; i++) {
-            std::cout << "Running index..." << std::endl;
-            std::cout << "Constructing the index structure..." << std::endl;
-            unsigned long long index_construction_start_time = currentTime();
-            AdvancedTwoHopIndex *index = new AdvancedTwoHopIndex(Graph, k, t_threshold, path_type);
-            unsigned long long index_construction_end_time = currentTime();
-            std::cout << "Index construction completed in " << timeFormatting(difftime(index_construction_end_time, index_construction_start_time)).str() << std::endl;
-            std::cout << "Number of paths in index: " << index->size() << std::endl;
-            std::cout << "Number of paths visited: " << index->visited_paths << std::endl;
-            std::cout << "Maximum number of minimal paths between two vertices following ordering constraints: " << index->max_number_of_paths() << std::endl;
             std::cout << "Solving queries..." << std::endl;
             unsigned long long query_start_time = currentTime();
             index->solve(Graph, argv[i], argv[argc - 1]);
