@@ -25,15 +25,15 @@ if __name__ == "__main__":
         print("Invalid input! Program terminated.")
         exit()
     km = int(input("Enter kmax: "))
-    partial = float(input("Enter the length of the query windows (0 < x < 1, or -1 to generate random-length intervals with fixed k): "))
+    partial = float(input("Enter the length of the query windows (0 < x < 1, or -1 to generate random-length intervals and random k): "))
     for i in range(num_of_queries):
         u, v = random.randint(1, n), random.randint(1, n)
         if partial == -1:
             length = int(tmax * random.random())
-            k = km
+            k = random.randint(1, km)
         else:
             length = int(tmax * partial)
-            k = random.randint(1, km)
+            k = km
         ts = random.randint(0, tmax - length)
         contents += str(u) + " " + str(v) + " " + str(ts) + " " + str(ts + length) + " " + str(k) + " " + "\n"
     open("query.txt", "w").write(contents)
