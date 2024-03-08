@@ -124,14 +124,13 @@ if __name__ == "__main__":
     # download datasets
     DATASETS_URL = [("http://konect.cc/files/download.tsv.contact.tar.bz2", 'U'),
                     ("http://konect.cc/files/download.tsv.mit.tar.bz2", 'U'),
-                    ("http://konect.cc/files/download.tsv.dblp_coauthor.tar.bz2", 'D'),
                     ("http://konect.cc/files/download.tsv.facebook-wosn-links.tar.bz2", 'U'),
                     ("http://konect.cc/files/download.tsv.youtube-u-growth.tar.bz2", 'U'),
-                    ("http://konect.cc/files/download.tsv.wikipedia-growth.tar.bz2", 'D'),
-                    ("http://konect.cc/files/download.tsv.flickr-growth.tar.bz2", 'D'),
                     ("http://konect.cc/files/download.tsv.soc-sign-bitcoinotc.tar.bz2", 'D'),
                     ("https://snap.stanford.edu/data/email-Eu-core-temporal.txt.gz", 'D'),
-                    ("https://snap.stanford.edu/data/CollegeMsg.txt.gz", 'D')]
+                    ("https://snap.stanford.edu/data/CollegeMsg.txt.gz", 'D'),
+                    ("http://konect.cc/files/download.tsv.digg-friends.tar.bz2", "D"),
+                    ("http://konect.cc/files/download.tsv.epinions.tar.bz2", "D")]
     if os.path.isdir("datasets") is False or len(os.listdir("datasets")) < len(DATASETS_URL):
         need_download = False
         if os.path.isdir("datasets") is False:
