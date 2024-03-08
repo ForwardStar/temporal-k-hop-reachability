@@ -26,7 +26,7 @@ int main(int argc, char* argv[]) {
     std::cin >> k;
     // std::cout << "Input maximum size of the query time window: ";
     // std::cin >> t_threshold;
-    std::cout << "Input the solution to be used (Online/Baseline/Advanced): ";
+    std::cout << "Input the solution to be used (Online/Baseline/T2H): ";
     std::cin >> sol_type;
     std::cout << "Input the type of paths to be queried (Temporal/Projected): ";
     std::cin >> path_type;
@@ -73,7 +73,7 @@ int main(int argc, char* argv[]) {
         delete Graph;
     }
 
-    if (sol_type == "Advanced") {
+    if (sol_type == "T2H") {
         std::cout << "Running index..." << std::endl;
         std::cout << "Constructing the index structure..." << std::endl;
         unsigned long long index_construction_start_time = currentTime();
