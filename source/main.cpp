@@ -1,6 +1,7 @@
 #include "commonfunctions.h"
 #include "temporal_graph.h"
 #include "online_search.h"
+#include "naive.h"
 #include "baseline.h"
 #include "advanced_two_hop.h"
 
@@ -27,7 +28,7 @@ int main(int argc, char* argv[]) {
     std::cin >> k;
     // std::cout << "Input maximum size of the query time window: ";
     // std::cin >> t_threshold;
-    std::cout << "Input the solution to be used (Online/Baseline/T2H): ";
+    std::cout << "Input the solution to be used (Online/Naive/Baseline/T2H): ";
     std::cin >> sol_type;
     // std::cout << "Input the type of paths to be queried (Temporal/Projected): ";
     // std::cin >> path_type;
@@ -53,7 +54,27 @@ int main(int argc, char* argv[]) {
         delete Graph;
     }
 
-    if (sol_type == "Baseline") {
+    if (sol_type == "Naive") {
+        std::cout << "Running index..." << std::endl;
+        std::cout << "Constructing the index structure..." << std::endl;
+        unsigned long long index_construction_start_time = currentTime();
+        NaiveIndex *index = new NaiveIndex(Graph, k, t_threshold, path_type);
+        unsigned long long index_construction_end_time = currentTime();
+        std::cout << "Index construction completed in " << timeFormatting(difftime(index_construction_end_time, index_construction_start_time)).str() << std::endl;
+        std::cout << "Number of paths in index: " << index->size() << std::endl;
+        // std::cout << "Number of paths visited: " << index->visited_paths << std::endl;
+        for (int i = 2; i < argc - 1; i++) {
+            std::cout << "Solving queries..." << std::endl;
+            unsigned long long query_start_time = currentTime();
+            index->solve(Graph, argv[i], argv[argc - 1]);
+            unsigned long long query_end_time = currentTime();
+            std::cout << "Query completed in " << timeFormatting(query_end_time - query_start_time).str() << std::endl;
+            std::cout << "Index completed!" << std::endl;
+        }
+        delete Graph;
+    }
+
+    if (sol_type == "MP") {
         std::cout << "Running index..." << std::endl;
         std::cout << "Constructing the index structure..." << std::endl;
         unsigned long long index_construction_start_time = currentTime();
@@ -61,8 +82,8 @@ int main(int argc, char* argv[]) {
         unsigned long long index_construction_end_time = currentTime();
         std::cout << "Index construction completed in " << timeFormatting(difftime(index_construction_end_time, index_construction_start_time)).str() << std::endl;
         std::cout << "Number of paths in index: " << index->size() << std::endl;
-        std::cout << "Number of paths visited: " << index->visited_paths << std::endl;
-        std::cout << "Maximum number of minimal paths between two vertices: " << index->max_number_of_paths << std::endl;
+        // std::cout << "Number of paths visited: " << index->visited_paths << std::endl;
+        std::cout << "Alpha: " << index->max_number_of_paths << std::endl;
         for (int i = 2; i < argc - 1; i++) {
             std::cout << "Solving queries..." << std::endl;
             unsigned long long query_start_time = currentTime();
@@ -82,8 +103,8 @@ int main(int argc, char* argv[]) {
         unsigned long long index_construction_end_time = currentTime();
         std::cout << "Index construction completed in " << timeFormatting(difftime(index_construction_end_time, index_construction_start_time)).str() << std::endl;
         std::cout << "Number of paths in index: " << index->size() << std::endl;
-        std::cout << "Number of paths visited: " << index->visited_paths << std::endl;
-        std::cout << "Maximum number of minimal paths between two vertices following ordering constraints: " << index->max_number_of_paths() << std::endl;
+        // std::cout << "Number of paths visited: " << index->visited_paths << std::endl;
+        std::cout << "Beta: " << index->max_number_of_paths() << std::endl;
         for (int i = 2; i < argc - 1; i++) {
             std::cout << "Solving queries..." << std::endl;
             unsigned long long query_start_time = currentTime();

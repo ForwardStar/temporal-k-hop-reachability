@@ -16,10 +16,13 @@ std::string onlineSearch(TemporalGraph* Graph, int s, int t, int ts, int te, int
         int u = Q.front()[0];
         int dis = Q.front()[1];
         int te = Q.front()[2];
+        Q.pop();
         if (dis >= k) {
             break;
         }
-        Q.pop();
+        if (te > T[u]) {
+            continue;
+        }
         TemporalGraph::Edge* edge = G->getHeadEdge(u);
         while (edge) {
             if (path_type == "Temporal" && (edge->interaction_time >= T[edge->to] || te > edge->interaction_time)) {

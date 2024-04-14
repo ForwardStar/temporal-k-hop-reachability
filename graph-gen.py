@@ -169,12 +169,13 @@ if __name__ == "__main__":
     file_ls = os.listdir("datasets")
     count = 1
     print("Datasets:")
+    print("0. example")
     for file in file_ls:
         if file.endswith(".txt"):
             file = file.split(".")[0]
         print(str(count) + ".", file)
         count += 1
-    user_input = input("Select a graph dataset (1-" + str(count - 1) + "): ")
+    user_input = input("Select a graph dataset (0-" + str(count - 1) + "): ")
 
     # move data file
     if user_input.strip() in [str(i) for i in range(count)]:
@@ -182,13 +183,16 @@ if __name__ == "__main__":
         is_finished = False
         thread_move_data_file = threading.Thread(target=showProcess)
         thread_move_data_file.start()
-        file = file_ls[int(user_input) - 1]
-        graph_type = None
-        for (url, gt) in DATASETS_URL:
-            if file in url:
-                graph_type = gt
-                break
-        move_data_file(file, graph_type, "graph.txt")
+        if (int(user_input) == 0):
+            open("graph.txt", "w").write("7 2 0\n2 1 1\n1 4 1\n4 5 1\n2 4 2\n4 6 2\n3 4 3\n4 7 3")
+        else:
+            file = file_ls[int(user_input) - 1]
+            graph_type = None
+            for (url, gt) in DATASETS_URL:
+                if file in url:
+                    graph_type = gt
+                    break
+            move_data_file(file, graph_type, "graph.txt")
         is_finished = True
         thread_move_data_file.join()
     else:
