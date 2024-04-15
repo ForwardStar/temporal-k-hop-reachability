@@ -20,9 +20,6 @@ std::string onlineSearch(TemporalGraph* Graph, int s, int t, int ts, int te, int
         if (dis >= k) {
             break;
         }
-        if (te > T[u]) {
-            continue;
-        }
         TemporalGraph::Edge* edge = G->getHeadEdge(u);
         while (edge) {
             if (path_type == "Temporal" && (edge->interaction_time >= T[edge->to] || te > edge->interaction_time)) {

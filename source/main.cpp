@@ -28,7 +28,7 @@ int main(int argc, char* argv[]) {
     std::cin >> k;
     // std::cout << "Input maximum size of the query time window: ";
     // std::cin >> t_threshold;
-    std::cout << "Input the solution to be used (Online/Naive/Baseline/T2H): ";
+    std::cout << "Input the solution to be used (Online/Naive/MP/T2H): ";
     std::cin >> sol_type;
     // std::cout << "Input the type of paths to be queried (Temporal/Projected): ";
     // std::cin >> path_type;

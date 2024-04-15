@@ -150,7 +150,7 @@ BaselineIndex::BaselineIndex(TemporalGraph* G, int k_input, int t_threshold, std
         vertex_cover.insert(u);
         vertex_cover.insert(v);
     }
-    // std::cout << "Vertex cover size: " << vertex_cover.size() << std::endl;
+    std::cout << "Vertex cover size: " << vertex_cover.size() << std::endl;
     cut.resize(vertex_cover.size());
     L.resize(vertex_cover.size());
     std::vector<std::vector<std::pair<std::pair<int, int>, int>>> T;
@@ -238,9 +238,10 @@ BaselineIndex::BaselineIndex(TemporalGraph* G, int k_input, int t_threshold, std
         for (auto v : Vs) {
             L[i - 1][v] = std::vector<std::pair<int, int>>();
             cut[i - 1][v] = std::vector<int>();
+            auto it1 = T[v].begin();
             for (int j = 1; j <= k; j++) {
                 intervals.clear();
-                for (auto it1 = T[v].begin(); it1 != T[v].end(); it1++) {
+                for (it1; it1 != T[v].end(); it1++) {
                     if (it1->second > j) {
                         break;
                     }

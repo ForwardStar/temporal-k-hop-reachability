@@ -127,7 +127,7 @@ NaiveIndex::NaiveIndex(TemporalGraph* G, int k_input, int t_threshold, std::stri
         vertex_cover.insert(u);
         vertex_cover.insert(v);
     }
-    // std::cout << "Vertex cover size: " << vertex_cover.size() << std::endl;
+    std::cout << "Vertex cover size: " << vertex_cover.size() << std::endl;
     int i = 0;
     for (auto u : vertex_cover) {
         inv_vertex_cover[u] = i++;

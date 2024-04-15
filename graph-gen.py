@@ -184,7 +184,7 @@ if __name__ == "__main__":
         thread_move_data_file = threading.Thread(target=showProcess)
         thread_move_data_file.start()
         if (int(user_input) == 0):
-            open("graph.txt", "w").write("7 2 0\n2 1 1\n1 4 1\n4 5 1\n2 4 2\n4 6 2\n3 4 3\n4 7 3")
+            open("graph.txt", "w").write("5 3 0\n2 1 1\n1 4 1\n4 5 1\n2 4 2\n4 6 2\n3 4 3\n4 7 3\n7 6 3")
         else:
             file = file_ls[int(user_input) - 1]
             graph_type = None
