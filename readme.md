@@ -90,7 +90,7 @@ Input kmax: 2
 Input the solution to be used (Online/Naive/Baseline/T2H): Online
 Building graph...
 Build graph success in 145μs (0s)
-n = 8, m = 8, tmax = 3
+n = 8, m = 10, tmax = 3
 Running online search...
 Average: 19μs (0s)
 Online search completed in 20043μs (0s)
