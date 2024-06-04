@@ -1,48 +1,27 @@
 #include "online_search.h"
 
-std::string onlineSearch(TemporalGraph* Graph, int s, int t, int ts, int te, int k, std::string path_type) {
+std::string onlineSearch(TemporalGraph* Graph, int s, int t, int ts, int te, int k) {
     if (s == t) {
         return "Reachable";
     }
-
-    std::vector<int> T;
-    T.assign(Graph->n, 2147483647);
-    T[s] = -1;
-    std::queue<std::vector<int>> Q;
-    TemporalGraph* G = Graph->projectedGraph(ts, te);
-
-    Q.push(std::vector<int>{s, 0, -1});
-    while (!Q.empty()) {
-        int u = Q.front()[0];
-        int dis = Q.front()[1];
-        int te = Q.front()[2];
-        Q.pop();
-        if (dis >= k) {
-            break;
-        }
-        TemporalGraph::Edge* edge = G->getHeadEdge(u);
-        while (edge) {
-            if (path_type == "Temporal" && (edge->interaction_time >= T[edge->to] || te > edge->interaction_time)) {
-                edge = G->getNextEdge(edge);
-                continue;
-            }
-            if (path_type == "Temporal" || T[edge->to] == 2147483647) {
-                if (edge->to == t) {
-                    delete G;
-                    return "Reachable";
-                }
-                T[edge->to] = std::min(T[edge->to], edge->interaction_time);
-                Q.push(std::vector<int>{edge->to, dis + 1, edge->interaction_time});
-            }
-            edge = G->getNextEdge(edge);
+    
+    std::vector<int> f;
+    f.assign(Graph->n, Graph->n);
+    f[s] = 0;
+    for (int i = ts; i <= te; i++) {
+        for (auto e : Graph->temporal_edge[i]) {
+            int u = e.first, v = e.second;
+            f[v] = std::min(f[v], f[u] + 1);
         }
     }
 
-    delete G;
+    if (f[t] <= k) {
+        return "Reachable";
+    }
     return "Not reachable";
 }
 
-void online(TemporalGraph* Graph, char* query_file, char* output_file, std::string path_type) {
+void online(TemporalGraph* Graph, char* query_file, char* output_file) {
     int s, t, ts, te, k;
     int query_num = 0;
     std::ifstream fin(query_file);
@@ -58,7 +37,7 @@ void online(TemporalGraph* Graph, char* query_file, char* output_file, std::stri
     unsigned long long start_time = currentTime();
     while (fin >> s >> t >> ts >> te >> k) {
         // Perform online BFS Search
-        fout << onlineSearch(Graph, s, t, ts, te, k, path_type) << std::endl;
+        fout << onlineSearch(Graph, s, t, ts, te, k) << std::endl;
         putProcess(double(++i) / query_num, currentTime() - start_time);
     }
 

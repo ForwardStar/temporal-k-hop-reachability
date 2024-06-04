@@ -1,128 +1,65 @@
 #include "baseline.h"
 
-bool cmp(std::pair<int, int> i, std::pair<int, int> j) {
-    return i.first > j.first || (i.first == j.first && i.second < j.second);
-}
-
-bool cmp1(std::pair<std::pair<int, int>, int> i, std::pair<std::pair<int, int>, int> j) {
+bool cmp(std::pair<std::pair<int, int>, int> i, std::pair<std::pair<int, int>, int> j) {
     return i.second < j.second;
 }
 
 unsigned long long BaselineIndex::size() {
     unsigned long long num_intervals = 0;
-    for (auto it = L.begin(); it != L.end(); it++) {
-        for (auto it1 = it->begin(); it1 != it->end(); it1++) {
-            num_intervals += it1->second.size();
+    for (int i = 0; i < L.size(); i++) {
+        for (auto it = L[i].begin(); it != L[i].end(); it++) {
+            for (int j = 0; j <= k; j++) {
+                num_intervals += it->second[j].size();
+            }
         }
     }
     return num_intervals;
 }
 
 bool BaselineIndex::reachable(TemporalGraph* G, int u, int v, int ts, int te, int k_input) {
-    if (k_input == 1) {
-        if (u == v) {
-            return true;
-        }
-        TemporalGraph::Edge* e = G->getHeadEdge(u);
-        while (e) {
-            if (e->interaction_time >= ts && e->interaction_time <= te && e->to == v) {
-                return true;
-            }
-            e = e->next;
-        }
-        return false;
-    }
     if (u == v) {
         return true;
     }
-    if (vertex_cover.find(u) == vertex_cover.end()) {
-        if (vertex_cover.find(v) != vertex_cover.end()) {
-            TemporalGraph::Edge* e = G->getHeadEdge(u);
-            while (e) {
-                if (e->interaction_time >= ts && e->interaction_time <= te) {
-                    if ((!is_temporal_path && reachable(G, e->to, v, ts, te, k_input - 1)) || 
-                        (is_temporal_path && reachable(G, e->to, v, e->interaction_time, te, k_input - 1))) {
-                        return true;
-                    }
-                }
-                e = e->next;
-            }
-            return false;
-        }
-        else {
-            TemporalGraph::Edge* e1 = G->getHeadEdge(u);
-            while (e1) {
-                if (e1->interaction_time >= ts && e1->interaction_time <= te) {
-                    TemporalGraph::Edge* e2 = G->getHeadInEdge(v);
-                    while (e2) {
-                        if (e2->interaction_time >= ts && e2->interaction_time <= te) {
-                            if ((!is_temporal_path && reachable(G, e1->to, e2->to, ts, te, k_input - 2)) || 
-                                (is_temporal_path && e2->interaction_time >= e1->interaction_time && reachable(G, e1->to, e2->to, e1->interaction_time, e2->interaction_time, k_input - 2))) {
-                                return true;
-                            }
-                        }
-                        e2 = e2->next;
-                    }
-                }
-                e1 = e1->next;
-            }
-            return false;
-        }
-    }
-    else {
+
+    if (vertex_cover.find(u) != vertex_cover.end()) {
         if (vertex_cover.find(v) != vertex_cover.end()) {
             int i = inv_vertex_cover[u];
             if (L[i].find(v) == L[i].end()) {
                 return false;
             }
             for (int j = 1; j <= k_input; j++) {
-                int l = 0;
-                if (j > 1) {
-                    l = cut[i][v][j - 2];
-                }
-                int r = cut[i][v][j - 1] - 1;
-                if (l > r) {
-                    continue;
-                }
-                while (l < r) {
-                    int mid = l + r + 1 >> 1;
-                    if (L[i][v][mid].first >= ts) {
-                        l = mid;
-                    }
-                    else {
-                        r = mid - 1;
-                    }
-                }
-                if (L[i][v][l].first >= ts && L[i][v][l].second <= te) {
-                    return true;
-                }
-            }
-            return false;
-        }
-        else {
-            TemporalGraph::Edge* e = G->getHeadInEdge(v);
-            while (e) {
-                if (e->interaction_time >= ts && e->interaction_time <= te) {
-                    if ((!is_temporal_path && reachable(G, u, e->to, ts, te, k_input - 1)) ||
-                        (is_temporal_path && reachable(G, u, e->to, ts, e->interaction_time, k_input - 1))) {
+                for (auto e : L[i][v][j]) {
+                    if (e.first >= ts && e.second <= te) {
                         return true;
                     }
                 }
-                e = e->next;
             }
-            return false;
+        }
+        else {
+            auto e = G->getHeadInEdge(v);
+            while (e) {
+                if (e->interaction_time >= ts && e->interaction_time <= te && reachable(G, u, e->to, ts, e->interaction_time, k_input - 1)) {
+                    return true;
+                }
+                e = G->getNextEdge(e);
+            }
         }
     }
+    else {
+        auto e = G->getHeadEdge(u);
+        while (e) {
+            if (e->interaction_time >= ts && e->interaction_time <= te && reachable(G, e->to, v, e->interaction_time, te, k_input - 1)) {
+                return true;
+            }
+            e = G->getNextEdge(e);
+        }
+    }
+    
+    return false;
 }
 
-BaselineIndex::BaselineIndex(TemporalGraph* G, int k_input, int t_threshold, std::string path_type) {
+BaselineIndex::BaselineIndex(TemporalGraph* G, int k_input) {
     k = k_input;
-    if (path_type == "Temporal") {
-        is_temporal_path = true;
-    }
-    else {
-        is_temporal_path = false;
-    }
 
     // Generate vertex cover
     auto large_degree_first = [](std::pair<int, long> i, std::pair<int, long> j) {
@@ -151,115 +88,117 @@ BaselineIndex::BaselineIndex(TemporalGraph* G, int k_input, int t_threshold, std
         vertex_cover.insert(v);
     }
     std::cout << "Vertex cover size: " << vertex_cover.size() << std::endl;
-    cut.resize(vertex_cover.size());
     L.resize(vertex_cover.size());
-    std::vector<std::vector<std::pair<std::pair<int, int>, int>>> T;
-    T.resize(G->n);
-    std::unordered_set<int> Vn, Vs;
-    std::vector<std::pair<int, int>> intervals;
     
     // Construct the index by vertex cover
     int i = 0;
     unsigned long long start_time = currentTime();
     for (auto u : vertex_cover) {
-        inv_vertex_cover[u] = i++;
-        std::queue<std::vector<int>> Q;
-        for (auto v : Vn) {
-            T[v].clear();
-        }
-        T.clear();
-        Vn.clear();
-        Vs.clear();
-        Q.push(std::vector<int>{u, G->tmax + 1, -1, 0});
+        inv_vertex_cover[u] = i;
 
-        // BFS to find minimal paths
+        // Find the edges in the k-hop subgraph of u
+        std::vector<std::pair<std::pair<int, int>, int>> edges;
+        std::queue<int> Q;
+        std::vector<int> f;
+        f.assign(G->n, G->n);
+        f[u] = 0;
+        Q.push(u);
         while (!Q.empty()) {
-            std::vector<int> current = Q.front();
+            int v = Q.front();
             Q.pop();
-            int v = current[0], ts = current[1], te = current[2], d = current[3];
-            // Check minimality to avoid expanding non-minimal paths
-            bool flag = false;
-            for (auto it1 = T[v].begin(); it1 != T[v].end(); it1++) {
-                if (it1->first.first >= ts && it1->first.second <= te && it1->second == d && (it1->first.first != ts || it1->first.second != te)) {
-                    flag = true;
-                    break;
-                }
+            if (f[v] >= k) {
+                break;
             }
-            if (flag) {
-                continue;
-            }
-            if ((u == v && d != 0)) {
-                continue;
-            }
-            TemporalGraph::Edge* e = G->getHeadEdge(v);
+            auto e = G->getHeadEdge(v);
             while (e) {
-                int w = e->to, t = e->interaction_time;
-                // Note that for temporal paths, edges should follow an increasing time order
-                if (!is_temporal_path || te <= t) {
-                    int ts_new = std::min(ts, t);
-                    int te_new = std::max(te, t);
-                    if (t_threshold == -1 || te_new - ts_new + 1 <= t_threshold) {
-                        visited_paths++;
-                        bool flag = false;
-                        for (auto it1 = T[w].begin(); it1 != T[w].end();) {
-                            if (it1->first.first >= ts_new && it1->first.second <= te_new) {
-                                flag = true;
-                                break;
-                            }
-                            if (it1->first.first <= ts_new && it1->first.second >= te_new && it1->second >= d + 1) {
-                                it1 = T[w].erase(it1);
-                                continue;
-                            }
-                            it1++;
-                        }
-                        if (!flag) {
-                            if (w != u && Vs.find(w) == Vs.end() && vertex_cover.find(w) != vertex_cover.end()) {
-                                Vs.insert(w);
-                            }
-                            if (Vn.find(w) == Vn.end()) {
-                                Vn.insert(w);
-                            }
-                            T[w].push_back(std::make_pair(std::make_pair(ts_new, te_new), d + 1));
-                            if (d + 1 < k) {
-                                Q.push(std::vector<int>{w, ts_new, te_new, d + 1});
-                            }
-                        }
-                    }
+                edges.push_back(std::make_pair(std::make_pair(v, e->to), e->interaction_time));
+                if (f[v] + 1 < f[e->to]) {
+                    Q.push(e->to);
+                    f[e->to] = f[v] + 1;
                 }
-                e = e->next;
+                e = G->getNextEdge(e);
             }
         }
+        std::sort(edges.begin(), edges.end(), cmp);
 
-        for (auto v : Vn) {
-            max_number_of_paths = std::max(max_number_of_paths, (unsigned long long)T[v].size());
-        }
-
-        // Compress all enqueued paths to generate a minimal path set
-        for (auto v : Vs) {
-            L[i - 1][v] = std::vector<std::pair<int, int>>();
-            cut[i - 1][v] = std::vector<int>();
-            auto it1 = T[v].begin();
-            for (int j = 1; j <= k; j++) {
-                intervals.clear();
-                for (it1; it1 != T[v].end(); it1++) {
-                    if (it1->second > j) {
+        // Index construction
+        for (auto e : edges) {
+            int v = e.first.first, w = e.first.second, t = e.second;
+            if (u == w) {
+                continue;
+            }
+            else if (u == v) {
+                if (L[i].find(w) == L[i].end()) {
+                    L[i][w] = std::vector<std::vector<std::pair<int, int>>>();
+                    L[i][w].resize(k + 1);
+                }
+                bool is_minimal = true;
+                for (auto path : L[i][w][1]) {
+                    if (path.first == t && path.second == t) {
+                        is_minimal = false;
                         break;
                     }
-                    intervals.push_back(it1->first);
                 }
-                std::sort(intervals.begin(), intervals.end(), cmp);
-                int tmin = G->tmax + 1;
-                for (auto it2 = intervals.begin(); it2 != intervals.end(); it2++) {
-                    if (tmin > it2->second) {
-                        tmin = it2->second;
-                        L[i - 1][v].push_back(*it2);
+                if (is_minimal) {
+                    L[i][w][1].push_back(std::make_pair(t, t));
+                }
+            }
+            else {
+                if (L[i].find(v) != L[i].end()) {
+                    for (int j = 1; j < k; j++) {
+                        int max_ts = -1;
+                        for (auto e : L[i][v][j]) {
+                            if (e.second <= t) {
+                                max_ts = std::max(max_ts, e.first);
+                            }
+                        }
+                        if (max_ts != -1) {
+                            if (L[i].find(w) == L[i].end()) {
+                                L[i][w] = std::vector<std::vector<std::pair<int, int>>>();
+                                L[i][w].resize(k + 1);
+                            }
+                            bool is_minimal = true;
+                            for (int j2 = 1; j2 <= j + 1; j2++) {
+                                for (auto e : L[i][w][j2]) {
+                                    if (e.first >= max_ts && e.second <= t) {
+                                        is_minimal = false;
+                                        break;
+                                    }
+                                }
+                            }
+                            if (is_minimal) {
+                                for (int j2 = j + 1; j2 <= k; j2++) {
+                                    for (auto it = L[i][w][j2].begin(); it != L[i][w][j2].end();) {
+                                        if (it->first <= max_ts && it->second >= t) {
+                                            it = L[i][w][j2].erase(it);
+                                            continue;
+                                        }
+                                        it++;
+                                    }
+                                }
+                                L[i][w][j + 1].push_back(std::make_pair(max_ts, t));
+                            }
+                        }
                     }
                 }
-                cut[i - 1][v].push_back(L[i - 1][v].size());
             }
         }
+
+        // Prune index to keep only vertices in the vertex cover
+        for (auto it = L[i].begin(); it != L[i].end();) {
+            unsigned long long num_paths = 0;
+            for (int j = 1; j <= k; j++) {
+                num_paths += (unsigned long long)it->second[j].size();
+            }
+            max_number_of_paths = std::max(num_paths, max_number_of_paths);
+            if (vertex_cover.find(it->first) == vertex_cover.end()) {
+                it = L[i].erase(it);
+                continue;
+            }
+            it++;
+        }
         
-        putProcess(double(i) / vertex_cover.size(), currentTime() - start_time);
+        putProcess(double(++i) / vertex_cover.size(), currentTime() - start_time);
     }
 }
 

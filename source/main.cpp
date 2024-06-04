@@ -47,7 +47,7 @@ int main(int argc, char* argv[]) {
         for (int i = 2; i < argc - 1; i++) {
             std::cout << "Running online search..." << std::endl;
             unsigned long long online_search_start_time = currentTime();
-            online(Graph, argv[i], argv[argc - 1], path_type);
+            online(Graph, argv[i], argv[argc - 1]);
             unsigned long long online_search_end_time = currentTime();
             std::cout << "Online search completed in " << timeFormatting(online_search_end_time - online_search_start_time).str() << std::endl;
         }
@@ -78,11 +78,10 @@ int main(int argc, char* argv[]) {
         std::cout << "Running index..." << std::endl;
         std::cout << "Constructing the index structure..." << std::endl;
         unsigned long long index_construction_start_time = currentTime();
-        BaselineIndex *index = new BaselineIndex(Graph, k, t_threshold, path_type);
+        BaselineIndex *index = new BaselineIndex(Graph, k);
         unsigned long long index_construction_end_time = currentTime();
         std::cout << "Index construction completed in " << timeFormatting(difftime(index_construction_end_time, index_construction_start_time)).str() << std::endl;
         std::cout << "Number of paths in index: " << index->size() << std::endl;
-        // std::cout << "Number of paths visited: " << index->visited_paths << std::endl;
         std::cout << "Alpha: " << index->max_number_of_paths << std::endl;
         for (int i = 2; i < argc - 1; i++) {
             std::cout << "Solving queries..." << std::endl;
