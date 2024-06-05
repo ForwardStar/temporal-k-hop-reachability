@@ -1,9 +1,9 @@
 #include "commonfunctions.h"
 #include "temporal_graph.h"
-#include "online_search.h"
+#include "online.h"
 #include "naive.h"
-#include "baseline.h"
-#include "advanced_two_hop.h"
+#include "MP.h"
+#include "T2H.h"
 
 bool debug = false;
 
@@ -26,12 +26,8 @@ int main(int argc, char* argv[]) {
     path_type = "Temporal";
     std::cout << "Input kmax: ";
     std::cin >> k;
-    // std::cout << "Input maximum size of the query time window: ";
-    // std::cin >> t_threshold;
     std::cout << "Input the solution to be used (Online/Naive/MP/T2H): ";
     std::cin >> sol_type;
-    // std::cout << "Input the type of paths to be queried (Temporal/Projected): ";
-    // std::cin >> path_type;
 
     if (std::strcmp(argv[argc - 1], "Debug") == 0) {
         debug = true;
@@ -62,7 +58,6 @@ int main(int argc, char* argv[]) {
         unsigned long long index_construction_end_time = currentTime();
         std::cout << "Index construction completed in " << timeFormatting(difftime(index_construction_end_time, index_construction_start_time)).str() << std::endl;
         std::cout << "Number of paths in index: " << index->size() << std::endl;
-        // std::cout << "Number of paths visited: " << index->visited_paths << std::endl;
         for (int i = 2; i < argc - 1; i++) {
             std::cout << "Solving queries..." << std::endl;
             unsigned long long query_start_time = currentTime();
@@ -78,7 +73,7 @@ int main(int argc, char* argv[]) {
         std::cout << "Running index..." << std::endl;
         std::cout << "Constructing the index structure..." << std::endl;
         unsigned long long index_construction_start_time = currentTime();
-        BaselineIndex *index = new BaselineIndex(Graph, k);
+        MPIndex *index = new MPIndex(Graph, k);
         unsigned long long index_construction_end_time = currentTime();
         std::cout << "Index construction completed in " << timeFormatting(difftime(index_construction_end_time, index_construction_start_time)).str() << std::endl;
         std::cout << "Number of paths in index: " << index->size() << std::endl;
@@ -98,11 +93,10 @@ int main(int argc, char* argv[]) {
         std::cout << "Running index..." << std::endl;
         std::cout << "Constructing the index structure..." << std::endl;
         unsigned long long index_construction_start_time = currentTime();
-        AdvancedTwoHopIndex *index = new AdvancedTwoHopIndex(Graph, k, t_threshold, path_type);
+        T2HIndex *index = new T2HIndex(Graph, k);
         unsigned long long index_construction_end_time = currentTime();
         std::cout << "Index construction completed in " << timeFormatting(difftime(index_construction_end_time, index_construction_start_time)).str() << std::endl;
         std::cout << "Number of paths in index: " << index->size() << std::endl;
-        // std::cout << "Number of paths visited: " << index->visited_paths << std::endl;
         std::cout << "Beta: " << index->max_number_of_paths() << std::endl;
         for (int i = 2; i < argc - 1; i++) {
             std::cout << "Solving queries..." << std::endl;

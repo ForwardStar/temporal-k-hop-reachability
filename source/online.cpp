@@ -1,4 +1,4 @@
-#include "online_search.h"
+#include "online.h"
 
 std::string onlineSearch(TemporalGraph* Graph, int s, int t, int ts, int te, int k) {
     if (s == t) {
@@ -36,7 +36,6 @@ void online(TemporalGraph* Graph, char* query_file, char* output_file) {
     int i = 0;
     unsigned long long start_time = currentTime();
     while (fin >> s >> t >> ts >> te >> k) {
-        // Perform online BFS Search
         fout << onlineSearch(Graph, s, t, ts, te, k) << std::endl;
         putProcess(double(++i) / query_num, currentTime() - start_time);
     }

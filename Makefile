@@ -1,4 +1,4 @@
-OBJS=commonfunctions.o temporal_graph.o online_search.o naive.o baseline.o advanced_two_hop.o main.o
+OBJS=commonfunctions.o temporal_graph.o online.o naive.o MP.o T2H.o main.o
 CC=g++
 CFLAGS=-c -std=c++11 -O3
 

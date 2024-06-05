@@ -1,10 +1,14 @@
-#include "baseline.h"
+#include "MP.h"
 
-bool cmp(std::pair<std::pair<int, int>, int> i, std::pair<std::pair<int, int>, int> j) {
+bool cmp_t1(std::pair<std::pair<int, int>, int> i, std::pair<std::pair<int, int>, int> j) {
     return i.second < j.second;
 }
 
-unsigned long long BaselineIndex::size() {
+bool cmp1(std::pair<int, int> i, std::pair<int, int> j) {
+    return i.first < j.first;
+}
+
+unsigned long long MPIndex::size() {
     unsigned long long num_intervals = 0;
     for (int i = 0; i < L.size(); i++) {
         for (auto it = L[i].begin(); it != L[i].end(); it++) {
@@ -16,7 +20,7 @@ unsigned long long BaselineIndex::size() {
     return num_intervals;
 }
 
-bool BaselineIndex::reachable(TemporalGraph* G, int u, int v, int ts, int te, int k_input) {
+bool MPIndex::reachable(TemporalGraph* G, int u, int v, int ts, int te, int k_input) {
     if (u == v) {
         return true;
     }
@@ -28,10 +32,21 @@ bool BaselineIndex::reachable(TemporalGraph* G, int u, int v, int ts, int te, in
                 return false;
             }
             for (int j = 1; j <= k_input; j++) {
-                for (auto e : L[i][v][j]) {
-                    if (e.first >= ts && e.second <= te) {
-                        return true;
+                int l = 0, r = L[i][v][j].size() - 1;
+                if (r == -1) {
+                    continue;
+                }
+                while (l < r) {
+                    int mid = (l + r) / 2;
+                    if (L[i][v][j][mid].first < ts) {
+                        l = mid + 1;
                     }
+                    else {
+                        r = mid;
+                    }
+                }
+                if (L[i][v][j][l].first >= ts && L[i][v][j][l].second <= te) {
+                    return true;
                 }
             }
         }
@@ -58,7 +73,7 @@ bool BaselineIndex::reachable(TemporalGraph* G, int u, int v, int ts, int te, in
     return false;
 }
 
-BaselineIndex::BaselineIndex(TemporalGraph* G, int k_input) {
+MPIndex::MPIndex(TemporalGraph* G, int k_input) {
     k = k_input;
 
     // Generate vertex cover
@@ -97,11 +112,11 @@ BaselineIndex::BaselineIndex(TemporalGraph* G, int k_input) {
         inv_vertex_cover[u] = i;
 
         // Find the edges in the k-hop subgraph of u
-        std::vector<std::pair<std::pair<int, int>, int>> edges;
-        std::queue<int> Q;
         std::vector<int> f;
         f.assign(G->n, G->n);
         f[u] = 0;
+        std::vector<std::pair<std::pair<int, int>, int>> edges;
+        std::queue<int> Q;
         Q.push(u);
         while (!Q.empty()) {
             int v = Q.front();
@@ -119,7 +134,7 @@ BaselineIndex::BaselineIndex(TemporalGraph* G, int k_input) {
                 e = G->getNextEdge(e);
             }
         }
-        std::sort(edges.begin(), edges.end(), cmp);
+        std::sort(edges.begin(), edges.end(), cmp_t1);
 
         // Index construction
         for (auto e : edges) {
@@ -202,7 +217,7 @@ BaselineIndex::BaselineIndex(TemporalGraph* G, int k_input) {
     }
 }
 
-void BaselineIndex::solve(TemporalGraph* G, char* query_file, char* output_file) {
+void MPIndex::solve(TemporalGraph* G, char* query_file, char* output_file) {
     int s, t, ts, te, k;
     int query_num = 0;
     std::ifstream fin(query_file);
@@ -217,7 +232,6 @@ void BaselineIndex::solve(TemporalGraph* G, char* query_file, char* output_file)
     int i = 0;
     unsigned long long start_time = currentTime();
     while (fin >> s >> t >> ts >> te >> k) {
-        // Perform online BFS Search
         if (reachable(G, s, t, ts, te, k)) {
             fout << "Reachable" << std::endl;
         }
