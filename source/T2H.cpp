@@ -1,7 +1,11 @@
 #include "T2H.h"
 
-bool cmp_t2(std::pair<std::pair<int, int>, int> i, std::pair<std::pair<int, int>, int> j) {
+bool cmp_t2_increasing(std::pair<std::pair<int, int>, int> i, std::pair<std::pair<int, int>, int> j) {
     return i.second < j.second;
+}
+
+bool cmp_t2_decreasing(std::pair<std::pair<int, int>, int> i, std::pair<std::pair<int, int>, int> j) {
+    return i.second > j.second;
 }
 
 bool cmp_degree(std::pair<int, long long> i, std::pair<int, long long> j) {
@@ -50,40 +54,76 @@ unsigned long long T2HIndex::max_number_of_paths() {
     return res;
 }
 
-std::pair<int, int>& T2HIndex::binary_search1(std::vector<std::unordered_map<int, std::vector<std::vector<std::pair<int, int>>>>> &L, int u, int v, int k, int ts) {
+std::pair<int, int>& T2HIndex::binary_search_ts_Lin(int u, int v, int k, int ts) {
     int l = 0;
-    int r = L[u][v][k].size() - 1;
+    int r = L_in[u][v][k].size() - 1;
     if (r == -1) {
         return null_interval;
     }
     while (l < r) {
         int mid = (l + r) / 2;
-        if (L[u][v][k][mid].first < ts) {
+        if (L_in[u][v][k][mid].first < ts) {
             l = mid + 1;
         }
         else {
             r = mid;
         }
     }
-    return L[u][v][k][l];
+    return L_in[u][v][k][l];
 }
 
-std::pair<int, int>& T2HIndex::binary_search2(std::vector<std::unordered_map<int, std::vector<std::vector<std::pair<int, int>>>>> &L, int u, int v, int k, int te) {
+std::pair<int, int>& T2HIndex::binary_search_te_Lin(int u, int v, int k, int te) {
     int l = 0;
-    int r = L[u][v][k].size() - 1;
+    int r = L_in[u][v][k].size() - 1;
     if (r == -1) {
         return null_interval;
     }
     while (l < r) {
         int mid = (l + r + 1) / 2;
-        if (L[u][v][k][mid].first > te) {
+        if (L_in[u][v][k][mid].first > te) {
             r = mid - 1;
         }
         else {
             l = mid;
         }
     }
-    return L[u][v][k][l];
+    return L_in[u][v][k][l];
+}
+
+std::pair<int, int>& T2HIndex::binary_search_ts_Lout(int u, int v, int k, int ts) {
+    int l = 0;
+    int r = L_out[u][v][k].size() - 1;
+    if (r == -1) {
+        return null_interval;
+    }
+    while (l < r) {
+        int mid = (l + r + 1) / 2;
+        if (L_out[u][v][k][mid].first < ts) {
+            r = mid - 1;
+        }
+        else {
+            l = mid;
+        }
+    }
+    return L_out[u][v][k][l];
+}
+
+std::pair<int, int>& T2HIndex::binary_search_te_Lout(int u, int v, int k, int te) {
+    int l = 0;
+    int r = L_out[u][v][k].size() - 1;
+    if (r == -1) {
+        return null_interval;
+    }
+    while (l < r) {
+        int mid = (l + r) / 2;
+        if (L_out[u][v][k][mid].first > te) {
+            l = mid + 1;
+        }
+        else {
+            r = mid;
+        }
+    }
+    return L_out[u][v][k][l];
 }
 
 bool T2HIndex::reachable(int u, int v, int ts, int te, int k) {
@@ -92,8 +132,8 @@ bool T2HIndex::reachable(int u, int v, int ts, int te, int k) {
     }
 
     if (L_out[u].find(v) != L_out[u].end()) {
-        for (int i = 0; i <= k; i++) {
-            auto interval = binary_search1(L_out, u, v, i, ts);
+        for (int i = 1; i <= k; i++) {
+            auto interval = binary_search_ts_Lout(u, v, i, ts);
             if (interval.first >= ts && interval.second <= te) {
                 return true;
             }
@@ -101,8 +141,8 @@ bool T2HIndex::reachable(int u, int v, int ts, int te, int k) {
     }
 
     if (L_in[v].find(u) != L_in[v].end()) {
-        for (int i = 0; i <= k; i++) {
-            auto interval = binary_search1(L_in, v, u, i, ts);
+        for (int i = 1; i <= k; i++) {
+            auto interval = binary_search_ts_Lin(v, u, i, ts);
             if (interval.first >= ts && interval.second <= te) {
                 return true;
             }
@@ -112,15 +152,19 @@ bool T2HIndex::reachable(int u, int v, int ts, int te, int k) {
     for (auto p : L_out[u]) {
         int w = p.first;
         if (L_in[v].find(w) != L_in[v].end()) {
-            int d1 = k - 1, d2 = 1, ts_max = -1;
-            while (d1 >= 0) {
-                auto interval1 = binary_search2(L_in, v, w, d2, te);
+            int d1 = k - 1, d2 = 1, ts_max = -1, te_min = 2147483647;
+            while (d1 > 0) {
+                auto interval1 = binary_search_te_Lin(v, w, d2, te);
                 if (interval1.first >= ts && interval1.second <= te) {
                     ts_max = std::max(ts_max, interval1.first);
                 }
 
-                auto interval2 = binary_search1(L_out, u, w, d1, ts);
-                if (interval2.first >= ts && interval2.second <= ts_max) {
+                auto interval2 = binary_search_ts_Lout(u, w, d1, ts);
+                if (interval2.first >= ts && interval2.second <= te) {
+                    te_min = std::min(te_min, interval2.second);
+                }
+
+                if (te_min <= ts_max) {
                     return true;
                 }
                 d1--, d2++;
@@ -168,7 +212,12 @@ void T2HIndex::construct_for_a_vertex(TemporalGraph* G, int u, bool reverse, std
             e = G->getNextEdge(e);
         }
     }
-    std::sort(edges.begin(), edges.end(), cmp_t2);
+    if (!reverse) {
+        std::sort(edges.begin(), edges.end(), cmp_t2_increasing);
+    }
+    else {
+        std::sort(edges.begin(), edges.end(), cmp_t2_decreasing);
+    }
 
     // Index construction
     for (auto e : edges) {
@@ -188,21 +237,39 @@ void T2HIndex::construct_for_a_vertex(TemporalGraph* G, int u, bool reverse, std
         else {
             if (L[v].find(u) != L[v].end()) {
                 for (int j = 1; j < k; j++) {
-                    auto interval = binary_search2(L, v, u, j, t);
-                    if (interval.first >= 0 && interval.second <= t) {
+                    std::pair<int, int> interval;
+                    if (!reverse) {
+                        interval = binary_search_te_Lin(v, u, j, t);
+                    }
+                    else {
+                        interval = binary_search_ts_Lout(v, u, j, t);
+                    }
+                    if (interval.first >= 0 && interval.second >= 0 && ((!reverse && interval.second <= t) || (reverse && interval.first >= t))) {
                         int ts = interval.first, te = t;
+                        if (reverse) {
+                            ts = t, te = interval.second;
+                        }
                         if ((!reverse && !reachable(u, w, ts, te, j + 1)) || (reverse && !reachable(w, u, ts, te, j + 1))) {
                             if (L[w].find(u) == L[w].end()) {
                                 L[w][u] = std::vector<std::vector<std::pair<int, int>>>();
                                 L[w][u].resize(k + 1);
                             }
-                            auto interval1 = binary_search2(L, w, u, j + 1, te);
-                            if (interval1.second == te) {
-                                interval1.first = ts;
+                            std::pair<int, int> interval1;
+                            if (!reverse) {
+                                interval1 = binary_search_te_Lin(w, u, j + 1, te);
+                                if (interval1.second == te) {
+                                    interval1.first = ts;
+                                    continue;
+                                }
                             }
                             else {
-                                L[w][u][j + 1].push_back(std::make_pair(ts, te));
+                                interval1 = binary_search_ts_Lout(w, u, j + 1, ts);
+                                if (interval1.first == ts) {
+                                    interval1.second = te;
+                                    continue;
+                                }
                             }
+                            L[w][u][j + 1].push_back(std::make_pair(ts, te));
                         }
                     }
                 }
