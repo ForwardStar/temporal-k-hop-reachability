@@ -1,8 +1,10 @@
 #include "commonfunctions.h"
 #include "temporal_graph.h"
 
-class MPIndex {
+class MPIndexO {
     private:
+        std::vector<int> f;
+        std::unordered_set<int> visited_vertices;
 
     public:
         std::unordered_set<int> vertex_cover;
@@ -14,9 +16,10 @@ class MPIndex {
 
         unsigned long long size();
 
+        // Note: k_input >= 2.
         bool reachable(TemporalGraph* G, int u, int v, int ts, int te, int k_input);
 
-        MPIndex(TemporalGraph* G, int k_input);
+        MPIndexO(TemporalGraph* G, int k_input);
 
         void solve(TemporalGraph* G, char* query_file, char* output_file);
 };

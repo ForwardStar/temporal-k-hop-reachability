@@ -3,6 +3,7 @@
 #include "online.h"
 #include "naive.h"
 #include "MP.h"
+#include "MP_optimized.h"
 #include "T2H.h"
 
 bool debug = false;
@@ -77,7 +78,27 @@ int main(int argc, char* argv[]) {
         unsigned long long index_construction_end_time = currentTime();
         std::cout << "Index construction completed in " << timeFormatting(difftime(index_construction_end_time, index_construction_start_time)).str() << std::endl;
         std::cout << "Number of paths in index: " << index->size() << std::endl;
-        std::cout << "Alpha: " << index->max_number_of_paths << std::endl;
+        std::cout << "Alpha: " << index->alpha << std::endl;
+        for (int i = 2; i < argc - 1; i++) {
+            std::cout << "Solving queries..." << std::endl;
+            unsigned long long query_start_time = currentTime();
+            index->solve(Graph, argv[i], argv[argc - 1]);
+            unsigned long long query_end_time = currentTime();
+            std::cout << "Query completed in " << timeFormatting(query_end_time - query_start_time).str() << std::endl;
+            std::cout << "Index completed!" << std::endl;
+        }
+        delete Graph;
+    }
+
+    if (sol_type == "MPO") {
+        std::cout << "Running index..." << std::endl;
+        std::cout << "Constructing the index structure..." << std::endl;
+        unsigned long long index_construction_start_time = currentTime();
+        MPIndexO *index = new MPIndexO(Graph, k);
+        unsigned long long index_construction_end_time = currentTime();
+        std::cout << "Index construction completed in " << timeFormatting(difftime(index_construction_end_time, index_construction_start_time)).str() << std::endl;
+        std::cout << "Number of paths in index: " << index->size() << std::endl;
+        std::cout << "Alpha: " << index->alpha << std::endl;
         for (int i = 2; i < argc - 1; i++) {
             std::cout << "Solving queries..." << std::endl;
             unsigned long long query_start_time = currentTime();

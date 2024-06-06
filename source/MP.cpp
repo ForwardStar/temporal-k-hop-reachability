@@ -1,19 +1,19 @@
 #include "MP.h"
 
-bool cmp_t1(std::pair<std::pair<int, int>, int> i, std::pair<std::pair<int, int>, int> j) {
-    return i.second < j.second;
+bool cmp(std::pair<int, int> i, std::pair<int, int> j) {
+    return i.first > j.first || (i.first == j.first && i.second < j.second);
 }
 
-bool cmp1(std::pair<int, int> i, std::pair<int, int> j) {
-    return i.first < j.first;
+bool cmp1(std::pair<std::pair<int, int>, int> i, std::pair<std::pair<int, int>, int> j) {
+    return i.second < j.second;
 }
 
 unsigned long long MPIndex::size() {
     unsigned long long num_intervals = 0;
-    for (int i = 0; i < L.size(); i++) {
-        for (auto it = L[i].begin(); it != L[i].end(); it++) {
-            for (int j = 0; j <= k; j++) {
-                num_intervals += it->second[j].size();
+    for (auto it = L.begin(); it != L.end(); it++) {
+        for (auto it1 = it->begin(); it1 != it->end(); it1++) {
+            for (int i = 0; i <= k; i++) {
+                num_intervals += it1->second[i].size();
             }
         }
     }
@@ -32,21 +32,10 @@ bool MPIndex::reachable(TemporalGraph* G, int u, int v, int ts, int te, int k_in
                 return false;
             }
             for (int j = 1; j <= k_input; j++) {
-                int l = 0, r = L[i][v][j].size() - 1;
-                if (r == -1) {
-                    continue;
-                }
-                while (l < r) {
-                    int mid = (l + r) / 2;
-                    if (L[i][v][j][mid].first < ts) {
-                        l = mid + 1;
+                for (auto e : L[i][v][j]) {
+                    if (e.first >= ts && e.second <= te) {
+                        return true;
                     }
-                    else {
-                        r = mid;
-                    }
-                }
-                if (L[i][v][j][l].first >= ts && L[i][v][j][l].second <= te) {
-                    return true;
                 }
             }
         }
@@ -69,7 +58,7 @@ bool MPIndex::reachable(TemporalGraph* G, int u, int v, int ts, int te, int k_in
             e = G->getNextEdge(e);
         }
     }
-    
+
     return false;
 }
 
@@ -105,116 +94,83 @@ MPIndex::MPIndex(TemporalGraph* G, int k_input) {
     std::cout << "Vertex cover size: " << vertex_cover.size() << std::endl;
     L.resize(vertex_cover.size());
     
-    // Construct the index by vertex cover
+    // Index construction
     int i = 0;
-    f.assign(G->n, G->n);
     unsigned long long start_time = currentTime();
     for (auto u : vertex_cover) {
         inv_vertex_cover[u] = i;
-
-        // Find the edges in the k-hop subgraph of u
-        for (auto v : visited_vertices) {
-            f[v] = G->n;
-        }
-        visited_vertices.clear();
-        f[u] = 0;
-        visited_vertices.insert(u);
-        std::vector<std::pair<std::pair<int, int>, int>> edges;
-        std::queue<int> Q;
-        Q.push(u);
+        std::queue<std::vector<int>> Q;
+        Q.push(std::vector<int>{u, G->tmax + 1, -1, 0});
         while (!Q.empty()) {
-            int v = Q.front();
+            std::vector<int> current = Q.front();
             Q.pop();
-            if (f[v] >= k) {
+            int v = current[0], ts = current[1], te = current[2], d = current[3];
+            if (d == k) {
                 break;
             }
-            auto e = G->getHeadEdge(v);
-            while (e) {
-                edges.push_back(std::make_pair(std::make_pair(v, e->to), e->interaction_time));
-                if (f[v] + 1 < f[e->to]) {
-                    visited_vertices.insert(e->to);
-                    Q.push(e->to);
-                    f[e->to] = f[v] + 1;
-                }
-                e = G->getNextEdge(e);
-            }
-        }
-        std::sort(edges.begin(), edges.end(), cmp_t1);
-
-        // Index construction
-        for (auto e : edges) {
-            int v = e.first.first, w = e.first.second, t = e.second;
-            if (u == w) {
-                continue;
-            }
-            else if (u == v) {
-                if (L[i].find(w) == L[i].end()) {
-                    L[i][w] = std::vector<std::vector<std::pair<int, int>>>();
-                    L[i][w].resize(k + 1);
-                }
-                bool is_minimal = true;
-                for (auto path : L[i][w][1]) {
-                    if (path.first == t && path.second == t) {
-                        is_minimal = false;
+            bool is_minimal = false;
+            for (int j = 1; j <= d; j++) {
+                for (auto e : L[i][v][j]) {
+                    if (e.first == ts && e.second == te) {
+                        is_minimal = true;
                         break;
                     }
                 }
                 if (is_minimal) {
-                    L[i][w][1].push_back(std::make_pair(t, t));
+                    break;
                 }
             }
-            else {
-                if (L[i].find(v) != L[i].end()) {
-                    for (int j = 1; j < k; j++) {
-                        int max_ts = -1;
-                        for (auto e : L[i][v][j]) {
-                            if (e.second <= t) {
-                                max_ts = std::max(max_ts, e.first);
+            if (d > 0 && !is_minimal) {
+                // Only minimal k-hop paths are expanded
+                continue;
+            }
+            TemporalGraph::Edge* e = G->getHeadEdge(v);
+            while (e) {
+                int w = e->to, t = e->interaction_time;
+                if (w != u && te <= t) {
+                    int ts_new = std::min(ts, t), te_new = std::max(te, t);
+                    if (L[i].find(w) == L[i].end()) {
+                        L[i][w] = std::vector<std::vector<std::pair<int, int>>>();
+                        L[i][w].resize(k + 1);
+                    }
+                    bool is_minimal = true;
+                    for (int j = 1; j <= d + 1; j++) {
+                        for (auto e : L[i][w][j]) {
+                            if (e.first >= ts_new && e.second <= te_new) {
+                                is_minimal = false;
+                                break;
                             }
                         }
-                        if (max_ts != -1) {
-                            if (L[i].find(w) == L[i].end()) {
-                                L[i][w] = std::vector<std::vector<std::pair<int, int>>>();
-                                L[i][w].resize(k + 1);
-                            }
-                            bool is_minimal = true;
-                            for (int j2 = 1; j2 <= j + 1; j2++) {
-                                for (auto e : L[i][w][j2]) {
-                                    if (e.first >= max_ts && e.second <= t) {
-                                        is_minimal = false;
-                                        break;
-                                    }
-                                }
-                            }
-                            if (is_minimal) {
-                                for (int j2 = j + 1; j2 <= k; j2++) {
-                                    for (auto it = L[i][w][j2].begin(); it != L[i][w][j2].end();) {
-                                        if (it->first <= max_ts && it->second >= t) {
-                                            it = L[i][w][j2].erase(it);
-                                            continue;
-                                        }
-                                        it++;
-                                    }
-                                }
-                                L[i][w][j + 1].push_back(std::make_pair(max_ts, t));
-                            }
+                        if (!is_minimal) {
+                            break;
                         }
                     }
+                    if (is_minimal) {
+                        for (auto it = L[i][w][d + 1].begin(); it != L[i][w][d + 1].end();) {
+                            if (it->first <= ts_new && it->second >= te_new) {
+                                it = L[i][w][d + 1].erase(it);
+                                continue;
+                            }
+                            it++;
+                        }
+                        L[i][w][d + 1].push_back(std::make_pair(ts_new, te_new));
+                        Q.push(std::vector<int>{w, ts_new, te_new, d + 1});
+                    }
                 }
+                e = G->getNextEdge(e);
             }
         }
 
-        // Prune index to keep only vertices in the vertex cover
         for (auto it = L[i].begin(); it != L[i].end();) {
-            unsigned long long num_paths = 0;
-            for (int j = 1; j <= k; j++) {
-                num_paths += (unsigned long long)it->second[j].size();
-            }
-            max_number_of_paths = std::max(num_paths, max_number_of_paths);
             if (vertex_cover.find(it->first) == vertex_cover.end()) {
                 it = L[i].erase(it);
                 continue;
             }
+            unsigned long long num_paths = 0;
+            for (int j = 1; j <= k; j++) {
+                num_paths += (unsigned long long)it->second[j].size();
+            }
+            alpha = std::max(num_paths, alpha);
             it++;
         }
         
