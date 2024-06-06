@@ -3,6 +3,8 @@
 
 class MPIndex {
     private:
+        std::vector<int> f;
+        std::unordered_set<int> visited_vertices;
 
     public:
         std::unordered_set<int> vertex_cover;

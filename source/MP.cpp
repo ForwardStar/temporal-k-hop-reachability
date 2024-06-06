@@ -107,14 +107,18 @@ MPIndex::MPIndex(TemporalGraph* G, int k_input) {
     
     // Construct the index by vertex cover
     int i = 0;
+    f.assign(G->n, G->n);
     unsigned long long start_time = currentTime();
     for (auto u : vertex_cover) {
         inv_vertex_cover[u] = i;
 
         // Find the edges in the k-hop subgraph of u
-        std::vector<int> f;
-        f.assign(G->n, G->n);
+        for (auto v : visited_vertices) {
+            f[v] = G->n;
+        }
+        visited_vertices.clear();
         f[u] = 0;
+        visited_vertices.insert(u);
         std::vector<std::pair<std::pair<int, int>, int>> edges;
         std::queue<int> Q;
         Q.push(u);
@@ -128,6 +132,7 @@ MPIndex::MPIndex(TemporalGraph* G, int k_input) {
             while (e) {
                 edges.push_back(std::make_pair(std::make_pair(v, e->to), e->interaction_time));
                 if (f[v] + 1 < f[e->to]) {
+                    visited_vertices.insert(e->to);
                     Q.push(e->to);
                     f[e->to] = f[v] + 1;
                 }

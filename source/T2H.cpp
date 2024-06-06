@@ -137,9 +137,12 @@ void T2HIndex::construct_for_a_vertex(TemporalGraph* G, int u, bool reverse, std
     current.push_back(std::vector<int>{u, G->tmax + 1, -1, 0});
 
     // Find the edges in the k-hop subgraph of u
-    std::vector<int> f;
-    f.assign(G->n, G->n);
+    for (auto v : visited_vertices) {
+        f[v] = G->n;
+    }
+    visited_vertices.clear();
     f[u] = 0;
+    visited_vertices.insert(u);
     std::vector<std::pair<std::pair<int, int>, int>> edges;
     std::queue<int> Q;
     Q.push(u);
@@ -157,6 +160,7 @@ void T2HIndex::construct_for_a_vertex(TemporalGraph* G, int u, bool reverse, std
             if (order[e->to] > order[u]) {
                 edges.push_back(std::make_pair(std::make_pair(v, e->to), e->interaction_time));
                 if (f[v] + 1 < f[e->to]) {
+                    visited_vertices.insert(e->to);
                     Q.push(e->to);
                     f[e->to] = f[v] + 1;
                 }
@@ -211,6 +215,7 @@ T2HIndex::T2HIndex(TemporalGraph* G, int k_input) {
     k = k_input;
     L_in.resize(G->n);
     L_out.resize(G->n);
+    f.assign(G->n, G->n);
 
     std::vector<std::pair<int, long long>> vertex_set;
     for (int u = 0; u < G->n; u++) {
