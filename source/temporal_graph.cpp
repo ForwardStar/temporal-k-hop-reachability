@@ -100,6 +100,14 @@ TemporalGraph* TemporalGraph::projectedGraph(int ts, int te) {
     return G;
 }
 
+TemporalGraph::TemporalGraph(int n_input) {
+    n = n_input;
+    head_edge.assign(n, nullptr);
+    degree.assign(n, 0);
+    head_in_edge.assign(n, nullptr);
+    in_degree.assign(n, 0);
+}
+
 TemporalGraph::TemporalGraph(char* graph_file, double fraction) {
     int u, v, t;
     std::ifstream fin(graph_file);

@@ -1,11 +1,7 @@
 #include "MP.h"
 
-bool cmp(std::pair<int, int> i, std::pair<int, int> j) {
-    return i.first > j.first || (i.first == j.first && i.second < j.second);
-}
-
-bool cmp1(std::pair<std::pair<int, int>, int> i, std::pair<std::pair<int, int>, int> j) {
-    return i.second < j.second;
+bool MP_cmp(std::pair<int, int> i, std::pair<int, int> j) {
+    return i.first < j.first;
 }
 
 unsigned long long MPIndex::size() {
@@ -32,10 +28,21 @@ bool MPIndex::reachable(TemporalGraph* G, int u, int v, int ts, int te, int k_in
                 return false;
             }
             for (int j = 1; j <= k_input; j++) {
-                for (auto e : L[i][v][j]) {
-                    if (e.first >= ts && e.second <= te) {
-                        return true;
+                int l = 0, r = L[i][v][j].size() - 1;
+                if (r == -1) {
+                    continue;
+                }
+                while (l < r) {
+                    int mid = (l + r) / 2;
+                    if (L[i][v][j][mid].first < ts) {
+                        l = mid + 1;
                     }
+                    else {
+                        r = mid;
+                    }
+                }
+                if (L[i][v][j][l].first >= ts && L[i][v][j][l].second <= te) {
+                    return true;
                 }
             }
         }
@@ -169,6 +176,7 @@ MPIndex::MPIndex(TemporalGraph* G, int k_input) {
             unsigned long long num_paths = 0;
             for (int j = 1; j <= k; j++) {
                 num_paths += (unsigned long long)it->second[j].size();
+                std::sort(it->second[j].begin(), it->second[j].end(), MP_cmp);
             }
             alpha = std::max(num_paths, alpha);
             it++;

@@ -1,6 +1,7 @@
 #include "commonfunctions.h"
 #include "temporal_graph.h"
-#include "online.h"
+#include "online1.h"
+#include "online2.h"
 #include "naive.h"
 #include "MP.h"
 #include "MP_optimized.h"
@@ -27,7 +28,7 @@ int main(int argc, char* argv[]) {
     path_type = "Temporal";
     std::cout << "Input kmax: ";
     std::cin >> k;
-    std::cout << "Input the solution to be used (Online/Naive/MP/T2H): ";
+    std::cout << "Input the solution to be used (Online1/Online2/Naive/MP/T2H): ";
     std::cin >> sol_type;
 
     if (std::strcmp(argv[argc - 1], "Debug") == 0) {
@@ -40,11 +41,22 @@ int main(int argc, char* argv[]) {
     TemporalGraph* Graph = build(argv);
     int vertex_num = Graph->numOfVertices();
 
-    if (sol_type == "Online") {
+    if (sol_type == "Online1") {
         for (int i = 2; i < argc - 1; i++) {
             std::cout << "Running online search..." << std::endl;
             unsigned long long online_search_start_time = currentTime();
-            online(Graph, argv[i], argv[argc - 1]);
+            online1(Graph, argv[i], argv[argc - 1]);
+            unsigned long long online_search_end_time = currentTime();
+            std::cout << "Online search completed in " << timeFormatting(online_search_end_time - online_search_start_time).str() << std::endl;
+        }
+        delete Graph;
+    }
+
+    if (sol_type == "Online2") {
+        for (int i = 2; i < argc - 1; i++) {
+            std::cout << "Running online search..." << std::endl;
+            unsigned long long online_search_start_time = currentTime();
+            online2(Graph, argv[i], argv[argc - 1]);
             unsigned long long online_search_end_time = currentTime();
             std::cout << "Online search completed in " << timeFormatting(online_search_end_time - online_search_start_time).str() << std::endl;
         }

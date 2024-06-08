@@ -111,6 +111,7 @@ class TemporalGraph {
         TemporalGraph* projectedGraph(int ts, int te);
 
         TemporalGraph() {}
+        TemporalGraph(int n_input);
         TemporalGraph(char* graph_file, double fraction);
         ~TemporalGraph();
 };
