@@ -3,6 +3,7 @@ import time
 import threading
 import tarfile
 import gzip
+import sys
 
 headers = {'User-Agent':'Mozilla/5.0 (Windows; U; Windows NT 6.1; en-US; rv:1.9.1.6) Gecko/20091201 Firefox/3.5.6'}
 
@@ -175,7 +176,11 @@ if __name__ == "__main__":
             file = file.split(".")[0]
         print(str(count) + ".", file)
         count += 1
-    user_input = input("Select a graph dataset (0-" + str(count - 1) + "): ")
+    user_input = None
+    if len(sys.argv) >= 2:
+        user_input = sys.argv[1]
+    else:
+        user_input = input("Select a graph dataset (0-" + str(count - 1) + "): ")
 
     # move data file
     if user_input.strip() in [str(i) for i in range(count)]:

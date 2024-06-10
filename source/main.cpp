@@ -21,19 +21,27 @@ TemporalGraph* build(char* argv[]) {
 
 int main(int argc, char* argv[]) {
     std::ios::sync_with_stdio(false);
-
-    int k;
-    int t_threshold = -1;
+    int k, t_threshold = -1;
     std::string sol_type, path_type;
     path_type = "Temporal";
-    std::cout << "Input kmax: ";
-    std::cin >> k;
-    std::cout << "Input the solution to be used (Online1/Online2/Naive/MP/T2H): ";
-    std::cin >> sol_type;
 
     if (std::strcmp(argv[argc - 1], "Debug") == 0) {
         debug = true;
         argc--;
+    }
+    
+    if (std::strcmp(argv[argc - 1], "Config") == 0) {
+        argc--;
+        k = std::atoi(argv[argc - 1]);
+        argc--;
+        sol_type = argv[argc - 1];
+        argc--;
+    }
+    else {
+        std::cout << "Input kmax: ";
+        std::cin >> k;
+        std::cout << "Input the solution to be used (Online1/Online2/Naive/MP/T2H): ";
+        std::cin >> sol_type;
     }
 
     unsigned long long start_time = currentTime();

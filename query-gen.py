@@ -1,4 +1,5 @@
 import random
+import sys
 
 def get_tmax_and_n(filename):
     tmax, n = None, None
@@ -18,14 +19,19 @@ def get_tmax_and_n(filename):
 if __name__ == "__main__":
     tmax, n = get_tmax_and_n("graph.txt")
     contents = ""
-    num_of_queries = input("Enter the number of queries to be generated: ")
-    try:
-        num_of_queries = int(num_of_queries)
-    except:
-        print("Invalid input! Program terminated.")
-        exit()
-    km = int(input("Enter kmax: "))
-    partial = float(input("Enter the length of the query windows (0 < x < 1, or -1 to generate random-length intervals and random k): "))
+    if len(sys.argv) >= 4:
+        num_of_queries = int(sys.argv[1])
+        km = int(sys.argv[2])
+        partial = float(sys.argv[3])
+    else:
+        num_of_queries = input("Enter the number of queries to be generated: ")
+        try:
+            num_of_queries = int(num_of_queries)
+        except:
+            print("Invalid input! Program terminated.")
+            exit()
+        km = int(input("Enter kmax: "))
+        partial = float(input("Enter the length of the query windows (0 < x < 1, or -1 to generate random-length intervals and random k): "))
     for i in range(num_of_queries):
         u, v = random.randint(1, n), random.randint(1, n)
         if partial == -1:
