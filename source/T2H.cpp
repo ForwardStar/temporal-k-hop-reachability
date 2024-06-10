@@ -80,7 +80,7 @@ std::pair<int, int>& T2HIndex::binary_search_te_Lin(int u, int v, int k, int te)
     }
     while (l < r) {
         int mid = (l + r + 1) / 2;
-        if (L_in[u][v][k][mid].first > te) {
+        if (L_in[u][v][k][mid].second > te) {
             r = mid - 1;
         }
         else {
@@ -116,7 +116,7 @@ std::pair<int, int>& T2HIndex::binary_search_te_Lout(int u, int v, int k, int te
     }
     while (l < r) {
         int mid = (l + r) / 2;
-        if (L_out[u][v][k][mid].first > te) {
+        if (L_out[u][v][k][mid].second > te) {
             l = mid + 1;
         }
         else {
@@ -132,6 +132,9 @@ bool T2HIndex::reachable(int u, int v, int ts, int te, int k) {
     }
 
     if (L_out[u].find(v) != L_out[u].end()) {
+        if (u == 1099 && v == 1676) {
+            std::cout << 1 << std::endl;
+        }
         for (int i = 1; i <= k; i++) {
             auto interval = binary_search_ts_Lout(u, v, i, ts);
             if (interval.first >= ts && interval.second <= te) {
@@ -141,6 +144,9 @@ bool T2HIndex::reachable(int u, int v, int ts, int te, int k) {
     }
 
     if (L_in[v].find(u) != L_in[v].end()) {
+        if (u == 1099 && v == 1676) {
+            std::cout << 2 << std::endl;
+        }
         for (int i = 1; i <= k; i++) {
             auto interval = binary_search_ts_Lin(v, u, i, ts);
             if (interval.first >= ts && interval.second <= te) {

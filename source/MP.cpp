@@ -169,16 +169,16 @@ MPIndex::MPIndex(TemporalGraph* G, int k_input) {
         }
 
         for (auto it = L[i].begin(); it != L[i].end();) {
-            if (vertex_cover.find(it->first) == vertex_cover.end()) {
-                it = L[i].erase(it);
-                continue;
-            }
             unsigned long long num_paths = 0;
             for (int j = 1; j <= k; j++) {
                 num_paths += (unsigned long long)it->second[j].size();
                 std::sort(it->second[j].begin(), it->second[j].end(), MP_cmp);
             }
             alpha = std::max(num_paths, alpha);
+            if (vertex_cover.find(it->first) == vertex_cover.end()) {
+                it = L[i].erase(it);
+                continue;
+            }
             it++;
         }
         
