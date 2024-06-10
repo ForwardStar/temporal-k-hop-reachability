@@ -5,9 +5,7 @@ class MPIndex {
     private:
 
     public:
-        std::unordered_set<int> vertex_cover;
         std::vector<std::unordered_map<int, std::vector<std::vector<std::pair<int, int>>>>> L;
-        std::unordered_map<int, int> inv_vertex_cover;
 
         int k = 0;
         unsigned long long alpha = 0;

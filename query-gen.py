@@ -30,7 +30,7 @@ if __name__ == "__main__":
         u, v = random.randint(1, n), random.randint(1, n)
         if partial == -1:
             length = int(tmax * random.random())
-            k = random.randint(2, km)
+            k = random.randint(1, km)
         else:
             length = int(tmax * partial)
             k = random.randint(1, km)
