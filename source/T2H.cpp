@@ -132,9 +132,6 @@ bool T2HIndex::reachable(int u, int v, int ts, int te, int k) {
     }
 
     if (L_out[u].find(v) != L_out[u].end()) {
-        if (u == 1099 && v == 1676) {
-            std::cout << 1 << std::endl;
-        }
         for (int i = 1; i <= k; i++) {
             auto interval = binary_search_ts_Lout(u, v, i, ts);
             if (interval.first >= ts && interval.second <= te) {
@@ -144,9 +141,6 @@ bool T2HIndex::reachable(int u, int v, int ts, int te, int k) {
     }
 
     if (L_in[v].find(u) != L_in[v].end()) {
-        if (u == 1099 && v == 1676) {
-            std::cout << 2 << std::endl;
-        }
         for (int i = 1; i <= k; i++) {
             auto interval = binary_search_ts_Lin(v, u, i, ts);
             if (interval.first >= ts && interval.second <= te) {
@@ -285,16 +279,15 @@ void T2HIndex::construct_for_a_vertex(TemporalGraph* G, int u, bool reverse, std
                                             L[w][u] = std::vector<std::vector<std::pair<int, int>>>();
                                             L[w][u].resize(k + 1);
                                         }
-                                        std::pair<int, int> interval1;
                                         if (!reverse) {
-                                            interval1 = binary_search_te_Lin(w, u, j + 1, te);
+                                            auto& interval1 = binary_search_te_Lin(w, u, j + 1, te);
                                             if (interval1.second == te) {
                                                 interval1.first = ts;
                                                 continue;
                                             }
                                         }
                                         else {
-                                            interval1 = binary_search_ts_Lout(w, u, j + 1, ts);
+                                            auto& interval1 = binary_search_ts_Lout(w, u, j + 1, ts);
                                             if (interval1.first == ts) {
                                                 interval1.second = te;
                                                 continue;
