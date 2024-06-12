@@ -17,14 +17,14 @@ unsigned long long T2HIndex::size() {
     for (int u = 0; u < L_out.size(); u++) {
         for (auto s1 : L_out[u]) {
             for (int i = 0; i <= k; i++) {
-                num_intervals += s1.second[i].size();
+                num_intervals += s1[i].size();
             }
         }
     }
     for (int u = 0; u < L_in.size(); u++) {
         for (auto s1 : L_in[u]) {
             for (int i = 0; i <= k; i++) {
-                num_intervals += s1.second[i].size();
+                num_intervals += s1[i].size();
             }
         }
     }
@@ -37,7 +37,7 @@ unsigned long long T2HIndex::max_number_of_paths() {
         for (auto s1 : L_out[u]) {
             unsigned long long tmp = 0;
             for (int i = 0; i <= k; i++) {
-                tmp += s1.second[i].size();
+                tmp += s1[i].size();
             }
             res = std::max(res, tmp);
         }
@@ -46,7 +46,7 @@ unsigned long long T2HIndex::max_number_of_paths() {
         for (auto s1 : L_in[u]) {
             unsigned long long tmp = 0;
             for (int i = 0; i <= k; i++) {
-                tmp += s1.second[i].size();
+                tmp += s1[i].size();
             }
             res = std::max(res, tmp);
         }
@@ -54,76 +54,96 @@ unsigned long long T2HIndex::max_number_of_paths() {
     return res;
 }
 
-std::pair<int, int>& T2HIndex::binary_search_ts_Lin(int u, int v, int k, int ts) {
+int T2HIndex::find_index(std::vector<int> &L_neighbours, int u) {
     int l = 0;
-    int r = L_in[u][v][k].size() - 1;
-    if (r == -1) {
-        return null_interval;
-    }
+    int r = L_neighbours.size() - 1;
     while (l < r) {
-        int mid = (l + r) / 2;
-        if (L_in[u][v][k][mid].first < ts) {
+        int mid = l + r >> 1;
+        if (order[L_neighbours[mid]] < order[u]) {
             l = mid + 1;
         }
         else {
             r = mid;
         }
     }
-    return L_in[u][v][k][l];
+    if (L_neighbours.size() > 0 && L_neighbours[l] == u) {
+        return l;
+    }
+    else {
+        return -1;
+    }
 }
 
-std::pair<int, int>& T2HIndex::binary_search_te_Lin(int u, int v, int k, int te) {
+std::pair<int, int>& T2HIndex::binary_search_ts_Lin(int u, int v_idx, int k, int ts) {
     int l = 0;
-    int r = L_in[u][v][k].size() - 1;
-    if (r == -1) {
-        return null_interval;
-    }
-    while (l < r) {
-        int mid = (l + r + 1) / 2;
-        if (L_in[u][v][k][mid].second > te) {
-            r = mid - 1;
-        }
-        else {
-            l = mid;
-        }
-    }
-    return L_in[u][v][k][l];
-}
-
-std::pair<int, int>& T2HIndex::binary_search_ts_Lout(int u, int v, int k, int ts) {
-    int l = 0;
-    int r = L_out[u][v][k].size() - 1;
-    if (r == -1) {
-        return null_interval;
-    }
-    while (l < r) {
-        int mid = (l + r + 1) / 2;
-        if (L_out[u][v][k][mid].first < ts) {
-            r = mid - 1;
-        }
-        else {
-            l = mid;
-        }
-    }
-    return L_out[u][v][k][l];
-}
-
-std::pair<int, int>& T2HIndex::binary_search_te_Lout(int u, int v, int k, int te) {
-    int l = 0;
-    int r = L_out[u][v][k].size() - 1;
+    int r = L_in[u][v_idx][k].size() - 1;
     if (r == -1) {
         return null_interval;
     }
     while (l < r) {
         int mid = (l + r) / 2;
-        if (L_out[u][v][k][mid].second > te) {
+        if (L_in[u][v_idx][k][mid].first < ts) {
             l = mid + 1;
         }
         else {
             r = mid;
         }
     }
-    return L_out[u][v][k][l];
+    return L_in[u][v_idx][k][l];
+}
+
+std::pair<int, int>& T2HIndex::binary_search_te_Lin(int u, int v_idx, int k, int te) {
+    int l = 0;
+    int r = L_in[u][v_idx][k].size() - 1;
+    if (r == -1) {
+        return null_interval;
+    }
+    while (l < r) {
+        int mid = (l + r + 1) / 2;
+        if (L_in[u][v_idx][k][mid].second > te) {
+            r = mid - 1;
+        }
+        else {
+            l = mid;
+        }
+    }
+    return L_in[u][v_idx][k][l];
+}
+
+std::pair<int, int>& T2HIndex::binary_search_ts_Lout(int u, int v_idx, int k, int ts) {
+    int l = 0;
+    int r = L_out[u][v_idx][k].size() - 1;
+    if (r == -1) {
+        return null_interval;
+    }
+    while (l < r) {
+        int mid = (l + r + 1) / 2;
+        if (L_out[u][v_idx][k][mid].first < ts) {
+            r = mid - 1;
+        }
+        else {
+            l = mid;
+        }
+    }
+    return L_out[u][v_idx][k][l];
+}
+
+std::pair<int, int>& T2HIndex::binary_search_te_Lout(int u, int v_idx, int k, int te) {
+    int l = 0;
+    int r = L_out[u][v_idx][k].size() - 1;
+    if (r == -1) {
+        return null_interval;
+    }
+    while (l < r) {
+        int mid = (l + r) / 2;
+        if (L_out[u][v_idx][k][mid].second > te) {
+            l = mid + 1;
+        }
+        else {
+            r = mid;
+        }
+    }
+    return L_out[u][v_idx][k][l];
 }
 
 bool T2HIndex::reachable(int u, int v, int ts, int te, int k) {
@@ -131,47 +151,56 @@ bool T2HIndex::reachable(int u, int v, int ts, int te, int k) {
         return true;
     }
 
-    if (L_out[u].find(v) != L_out[u].end()) {
+    int v_idx = find_index(L_out_neighbours[u], v);
+    if (v_idx != -1) {
         for (int i = 1; i <= k; i++) {
-            auto interval = binary_search_ts_Lout(u, v, i, ts);
+            auto interval = binary_search_ts_Lout(u, v_idx, i, ts);
             if (interval.first >= ts && interval.second <= te) {
                 return true;
             }
         }
     }
 
-    if (L_in[v].find(u) != L_in[v].end()) {
+    int u_idx = find_index(L_in_neighbours[v], u);
+    if (u_idx != -1) {
         for (int i = 1; i <= k; i++) {
-            auto interval = binary_search_ts_Lin(v, u, i, ts);
+            auto interval = binary_search_ts_Lin(v, u_idx, i, ts);
             if (interval.first >= ts && interval.second <= te) {
                 return true;
             }
         }
     }
 
-    for (auto p : L_out[u]) {
-        int w = p.first;
-        if (L_in[v].find(w) != L_in[v].end()) {
+    int i = 0, j = 0;
+    while (i < L_out_neighbours[u].size() && j < L_in_neighbours[v].size()) {
+        while (j < L_in_neighbours[v].size() && order[L_in_neighbours[v][j]] < order[L_out_neighbours[u][i]]) {
+            j++;
+        }
+        if (j < L_in_neighbours[v].size() && L_in_neighbours[v][j] == L_out_neighbours[u][i]) {
             int d1 = k - 1, d2 = 1, ts_max = -1, te_min = 2147483647;
             while (d1 > 0) {
-                auto interval1 = binary_search_te_Lin(v, w, d2, te);
+                auto interval1 = binary_search_te_Lin(v, j, d2, te);
                 if (interval1.first >= ts && interval1.second <= te) {
                     ts_max = std::max(ts_max, interval1.first);
                 }
 
-                auto interval2 = binary_search_ts_Lout(u, w, d1, ts);
+                auto interval2 = binary_search_ts_Lout(u, i, d1, ts);
                 if (interval2.first >= ts && interval2.second <= ts_max) {
                     return true;
                 }
                 d1--, d2++;
             }
         }
+        i++;
     }
 
     return false;
 }
 
-void T2HIndex::construct_for_a_vertex(TemporalGraph* G, int u, bool reverse, std::vector<std::unordered_map<int, std::vector<std::vector<std::pair<int, int>>>>> &L) {
+void T2HIndex::construct_for_a_vertex(TemporalGraph* G, int u, bool reverse) {
+    auto& L = reverse ? L_out : L_in;
+    auto& L_neighbours = reverse ? L_out_neighbours : L_in_neighbours;
+
     // Find the edges in the k-hop subgraph of u
     for (auto v : visited_vertices) {
         f[v] = G->n;
@@ -251,49 +280,48 @@ void T2HIndex::construct_for_a_vertex(TemporalGraph* G, int u, bool reverse, std
                         // Do nothing.
                     }
                     else if (u == v) {
-                        if (L[w].find(u) == L[w].end()) {
-                            L[w][u] = std::vector<std::vector<std::pair<int, int>>>();
-                            L[w][u].resize(k + 1);
+                        if (L_neighbours[w].size() == 0 || L_neighbours[w][L[w].size() - 1] != u) {
+                            L[w].push_back(std::vector<std::vector<std::pair<int, int>>>());
+                            L[w][L[w].size() - 1].resize(k + 1);
+                            L_neighbours[w].push_back(u);
                         }
                         if ((!reverse && !reachable(u, w, t, t, 1)) || (reverse && !reachable(w, u, t, t, 1))) {
-                            L[w][u][1].push_back(std::make_pair(t, t));
+                            L[w][L[w].size() - 1][1].push_back(std::make_pair(t, t));
                         }
                     }
                     else {
-                        if (L[v].find(u) != L[v].end()) {
+                        if (L_neighbours[v].size() > 0 && L_neighbours[v][L[v].size() - 1] == u) {
                             for (int j = 1; j < k; j++) {
-                                std::pair<int, int> interval;
-                                if (!reverse) {
-                                    interval = binary_search_te_Lin(v, u, j, t);
+                                if (L[v][L[v].size() - 1][j].size() == 0) {
+                                    continue;
                                 }
-                                else {
-                                    interval = binary_search_ts_Lout(v, u, j, t);
-                                }
+                                std::pair<int, int> interval = L[v][L[v].size() - 1][j][L[v][L[v].size() - 1][j].size() - 1];
                                 if (interval.first >= 0 && interval.second >= 0 && ((!reverse && interval.second <= t) || (reverse && interval.first >= t))) {
                                     int ts = interval.first, te = t;
                                     if (reverse) {
                                         ts = t, te = interval.second;
                                     }
                                     if ((!reverse && !reachable(u, w, ts, te, j + 1)) || (reverse && !reachable(w, u, ts, te, j + 1))) {
-                                        if (L[w].find(u) == L[w].end()) {
-                                            L[w][u] = std::vector<std::vector<std::pair<int, int>>>();
-                                            L[w][u].resize(k + 1);
+                                        if (L_neighbours[w].size() == 0 || L_neighbours[w][L[w].size() - 1] != u) {
+                                            L[w].push_back(std::vector<std::vector<std::pair<int, int>>>());
+                                            L[w][L[w].size() - 1].resize(k + 1);
+                                            L_neighbours[w].push_back(u);
                                         }
                                         if (!reverse) {
-                                            auto& interval1 = binary_search_te_Lin(w, u, j + 1, te);
+                                            auto& interval1 = binary_search_te_Lin(w, L[w].size() - 1, j + 1, te);
                                             if (interval1.second == te) {
                                                 interval1.first = ts;
                                                 continue;
                                             }
                                         }
                                         else {
-                                            auto& interval1 = binary_search_ts_Lout(w, u, j + 1, ts);
+                                            auto& interval1 = binary_search_ts_Lout(w, L[w].size() - 1, j + 1, ts);
                                             if (interval1.first == ts) {
                                                 interval1.second = te;
                                                 continue;
                                             }
                                         }
-                                        L[w][u][j + 1].push_back(std::make_pair(ts, te));
+                                        L[w][L[w].size() - 1][j + 1].push_back(std::make_pair(ts, te));
                                     }
                                 }
                             }
@@ -315,6 +343,8 @@ T2HIndex::T2HIndex(TemporalGraph* G, int k_input) {
     k = k_input;
     L_in.resize(G->n);
     L_out.resize(G->n);
+    L_in_neighbours.resize(G->n);
+    L_out_neighbours.resize(G->n);
     f.assign(G->n, G->n);
 
     std::vector<std::pair<int, long long>> vertex_set;
@@ -332,8 +362,8 @@ T2HIndex::T2HIndex(TemporalGraph* G, int k_input) {
     int i = 0;
     for (auto it = vertex_set.begin(); it != vertex_set.end(); it++) {
         int u = it->first;
-        construct_for_a_vertex(G, u, false, L_in);
-        construct_for_a_vertex(G, u, true, L_out);
+        construct_for_a_vertex(G, u, false);
+        construct_for_a_vertex(G, u, true);
         putProcess(double(++i) / G->n, currentTime() - start_time);
     }
 }

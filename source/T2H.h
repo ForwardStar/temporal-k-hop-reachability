@@ -6,15 +6,18 @@ class T2HIndex {
         std::vector<int> f;
         std::unordered_set<int> visited_vertices;
         std::pair<int, int> null_interval = std::make_pair(-1, -1);
+
+        int find_index(std::vector<int> &L_neighbours, int u);
         std::pair<int, int>& binary_search_ts_Lin(int u, int v, int k, int ts);
         std::pair<int, int>& binary_search_te_Lin(int u, int v, int k, int te);
         std::pair<int, int>& binary_search_ts_Lout(int u, int v, int k, int ts);
         std::pair<int, int>& binary_search_te_Lout(int u, int v, int k, int te);
 
-        void construct_for_a_vertex(TemporalGraph* G, int u, bool reverse, std::vector<std::unordered_map<int, std::vector<std::vector<std::pair<int, int>>>>> &L);
+        void construct_for_a_vertex(TemporalGraph* G, int u, bool reverse);
         
     public:
-        std::vector<std::unordered_map<int, std::vector<std::vector<std::pair<int, int>>>>> L_in, L_out;
+        std::vector<std::vector<std::vector<std::vector<std::pair<int, int>>>>> L_in, L_out;
+        std::vector<std::vector<int>> L_in_neighbours, L_out_neighbours;
 
         int k = 0;
         unsigned long long visited_paths = 0;
