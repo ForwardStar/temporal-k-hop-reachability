@@ -177,7 +177,7 @@ bool T2HIndex::reachable(int u, int v, int ts, int te, int k) {
             j++;
         }
         if (j < L_in_neighbours[v].size() && L_in_neighbours[v][j] == L_out_neighbours[u][i]) {
-            int d1 = k - 1, d2 = 1, ts_max = -1, te_min = 2147483647;
+            int d1 = k - 1, d2 = 1, ts_max = -1;
             while (d1 > 0) {
                 auto interval1 = binary_search_te_Lin(v, j, d2, te);
                 if (interval1.first >= ts && interval1.second <= te) {
@@ -201,142 +201,75 @@ void T2HIndex::construct_for_a_vertex(TemporalGraph* G, int u, bool reverse) {
     auto& L = reverse ? L_out : L_in;
     auto& L_neighbours = reverse ? L_out_neighbours : L_in_neighbours;
 
-    // Find the edges in the k-hop subgraph of u
-    for (auto v : visited_vertices) {
-        f[v] = G->n;
-    }
-    visited_vertices.clear();
-    f[u] = 0;
-    visited_vertices.insert(u);
-    std::vector<std::pair<std::pair<int, int>, int>> edges;
-    std::queue<int> Q;
-    Q.push(u);
-    while (!Q.empty()) {
-        int v = Q.front();
-        Q.pop();
-        if (f[v] >= k) {
-            break;
-        }
-        auto e = G->getHeadEdge(v);
-        if (reverse) {
-            e = G->getHeadInEdge(v);
-        }
-        while (e) {
-            if (order[e->to] > order[u]) {
-                edges.push_back(std::make_pair(std::make_pair(v, e->to), e->interaction_time));
-                if (f[v] + 1 < f[e->to]) {
-                    visited_vertices.insert(e->to);
-                    Q.push(e->to);
-                    f[e->to] = f[v] + 1;
-                }
-            }
-            e = G->getNextEdge(e);
-        }
-    }
-    if (!reverse) {
-        std::sort(edges.begin(), edges.end(), cmp_t2_increasing);
-    }
-    else {
-        std::sort(edges.begin(), edges.end(), cmp_t2_decreasing);
-    }
+    std::vector<std::pair<std::pair<int, int>, int>> edge_set;
+    std::unordered_set<int> Q[2];
+    Q[0].insert(u);
 
-    // Index construction
-    std::unordered_set<int> sources;
-    auto shortest_first = [](std::pair<int, int> i, std::pair<int, int> j) {
-        return i.second > j.second;
-    };
-    std::priority_queue<std::pair<int, int>, std::vector<std::pair<int, int>>, decltype(shortest_first)> Qp(shortest_first);
-    TemporalGraph* Graph = new TemporalGraph(G->n);
-    for (auto v : visited_vertices) {
-        f[v] = Graph->n;
-    }
-    visited_vertices.clear();
-    f[u] = 0;
-    visited_vertices.insert(u);
-    int last = 0;
-    for (int i = 1; i <= edges.size(); i++) {
-        if (i == edges.size() || edges[i].second != edges[i - 1].second) {
-            for (int j = last; j < i; j++) {
-                sources.insert(edges[j].first.first);
-                Graph->addEdge(edges[j].first.first, edges[j].first.second, edges[j].second);
+    for (int d = 0; d < k; d++) {
+        edge_set.clear();
+        for (int v : Q[d % 2]) {
+            auto e = G->getHeadEdge(v);
+            if (reverse) {
+                e = G->getHeadInEdge(v);
             }
-            last = i;
-            for (auto v : sources) {
-                Qp.push(std::make_pair(v, f[v]));
+            while (e) {
+                if (order[e->to] > order[u]) {
+                    edge_set.push_back(std::make_pair(std::make_pair(v, e->to), e->interaction_time));
+                }
+                e = G->getNextEdge(e);
             }
-            sources.clear();
-            while (!Qp.empty()) {
-                int v = Qp.top().first;
-                Qp.pop();
-                auto e = Graph->getHeadEdge(v);
-                while (e) {
-                    int w = e->to, t = e->interaction_time;
-                    if (f[v] + 1 < f[w]) {
-                        f[w] = f[v] + 1;
-                        Qp.push(std::make_pair(w, f[w]));
-                        visited_vertices.insert(w);
+        }
+
+        std::sort(edge_set.begin(), edge_set.end(), reverse ? cmp_t2_decreasing : cmp_t2_increasing);
+
+        for (auto e : edge_set) {
+            int v = e.first.first, w = e.first.second, t = e.second;
+            if (u == v) {
+                if (L_neighbours[w].size() == 0 || L_neighbours[w][L[w].size() - 1] != u) {
+                    L[w].push_back(std::vector<std::vector<std::pair<int, int>>>());
+                    L[w][L[w].size() - 1].resize(k + 1);
+                    L_neighbours[w].push_back(u);
+                }
+                if ((!reverse && !reachable(u, w, t, t, 1)) || (reverse && !reachable(w, u, t, t, 1))) {
+                    Q[(d + 1) % 2].insert(w);
+                    L[w][L[w].size() - 1][1].push_back(std::make_pair(t, t));
+                }
+                continue;
+            }
+            auto interval = reverse ? binary_search_ts_Lout(v, L[v].size() - 1, d, t) : binary_search_te_Lin(v, L[v].size() - 1, d, t);
+            if (interval.first >= 0 && interval.second >= 0 && ((!reverse && interval.second <= t) || (reverse && interval.first >= t))) {
+                int ts = interval.first, te = t;
+                if (reverse) {
+                    ts = t, te = interval.second;
+                }
+                if ((!reverse && !reachable(u, w, ts, te, d + 1)) || (reverse && !reachable(w, u, ts, te, d + 1))) {
+                    Q[(d + 1) % 2].insert(w);
+                    if (L_neighbours[w].size() == 0 || L_neighbours[w][L[w].size() - 1] != u) {
+                        L[w].push_back(std::vector<std::vector<std::pair<int, int>>>());
+                        L[w][L[w].size() - 1].resize(k + 1);
+                        L_neighbours[w].push_back(u);
                     }
-                    if (u == w) {
-                        // Do nothing.
-                    }
-                    else if (u == v) {
-                        if (L_neighbours[w].size() == 0 || L_neighbours[w][L[w].size() - 1] != u) {
-                            L[w].push_back(std::vector<std::vector<std::pair<int, int>>>());
-                            L[w][L[w].size() - 1].resize(k + 1);
-                            L_neighbours[w].push_back(u);
-                        }
-                        if ((!reverse && !reachable(u, w, t, t, 1)) || (reverse && !reachable(w, u, t, t, 1))) {
-                            L[w][L[w].size() - 1][1].push_back(std::make_pair(t, t));
+                    if (!reverse) {
+                        auto& interval1 = binary_search_te_Lin(w, L[w].size() - 1, d + 1, te);
+                        if (interval1.second == te) {
+                            interval1.first = ts;
+                            continue;
                         }
                     }
                     else {
-                        if (L_neighbours[v].size() > 0 && L_neighbours[v][L[v].size() - 1] == u) {
-                            for (int j = 1; j < k; j++) {
-                                if (L[v][L[v].size() - 1][j].size() == 0) {
-                                    continue;
-                                }
-                                std::pair<int, int> interval = L[v][L[v].size() - 1][j][L[v][L[v].size() - 1][j].size() - 1];
-                                if (interval.first >= 0 && interval.second >= 0 && ((!reverse && interval.second <= t) || (reverse && interval.first >= t))) {
-                                    int ts = interval.first, te = t;
-                                    if (reverse) {
-                                        ts = t, te = interval.second;
-                                    }
-                                    if ((!reverse && !reachable(u, w, ts, te, j + 1)) || (reverse && !reachable(w, u, ts, te, j + 1))) {
-                                        if (L_neighbours[w].size() == 0 || L_neighbours[w][L[w].size() - 1] != u) {
-                                            L[w].push_back(std::vector<std::vector<std::pair<int, int>>>());
-                                            L[w][L[w].size() - 1].resize(k + 1);
-                                            L_neighbours[w].push_back(u);
-                                        }
-                                        if (!reverse) {
-                                            auto& interval1 = binary_search_te_Lin(w, L[w].size() - 1, j + 1, te);
-                                            if (interval1.second == te) {
-                                                interval1.first = ts;
-                                                continue;
-                                            }
-                                        }
-                                        else {
-                                            auto& interval1 = binary_search_ts_Lout(w, L[w].size() - 1, j + 1, ts);
-                                            if (interval1.first == ts) {
-                                                interval1.second = te;
-                                                continue;
-                                            }
-                                        }
-                                        L[w][L[w].size() - 1][j + 1].push_back(std::make_pair(ts, te));
-                                    }
-                                }
-                            }
+                        auto& interval1 = binary_search_ts_Lout(w, L[w].size() - 1, d + 1, ts);
+                        if (interval1.first == ts) {
+                            interval1.second = te;
+                            continue;
                         }
                     }
-                    auto e_next = Graph->getNextEdge(e);
-                    delete e;
-                    Graph->head_edge[v] = e_next;
-                    e = e_next;
+                    L[w][L[w].size() - 1][d + 1].push_back(std::make_pair(ts, te));
                 }
             }
         }
+
+        Q[d % 2].clear();
     }
-    
-    delete Graph;
 }
 
 T2HIndex::T2HIndex(TemporalGraph* G, int k_input) {
