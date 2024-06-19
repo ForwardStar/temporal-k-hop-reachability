@@ -6,9 +6,7 @@ if __name__ == "__main__":
     if not os.path.exists("datasets"):
         print("No datasets detected!")
         exit()
-    if not os.path.exists("main"):
-        print("No executable file detected!")
-        exit()
+    os.system("make")
     num_dataset = len(os.listdir("datasets"))
     for i in range(num_dataset + 1):
         os.system("python3 graph-gen.py %s" % (i))
