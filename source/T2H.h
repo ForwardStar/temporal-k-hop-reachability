@@ -3,8 +3,8 @@
 
 class T2HIndex {
     private:
-        std::vector<int> f;
-        std::unordered_set<int> visited_vertices;
+        std::vector<std::set<std::pair<int, int>>> minimal_intervals;
+        std::unordered_set<int> affected_vertices;
         std::pair<int, int> null_interval = std::make_pair(-1, -1);
 
         int find_index(std::vector<int> &L_neighbours, int u);
