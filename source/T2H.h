@@ -24,7 +24,7 @@ class T2HIndex {
         int* order;
 
         unsigned long long size();
-        unsigned long long max_number_of_paths();
+        double max_number_of_paths();
 
         bool reachable(int u, int v, int ts, int te, int k);
 

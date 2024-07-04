@@ -31,27 +31,27 @@ unsigned long long T2HIndex::size() {
     return num_intervals;
 }
 
-unsigned long long T2HIndex::max_number_of_paths() {
+double T2HIndex::max_number_of_paths() {
     unsigned long long res = 0;
     for (int u = 0; u < L_out.size(); u++) {
+        unsigned long long tmp1 = 0;
         for (auto s1 : L_out[u]) {
-            unsigned long long tmp = 0;
+            unsigned long long tmp2 = 0;
             for (int i = 0; i <= k; i++) {
-                tmp += s1[i].size();
+                tmp2 += s1[i].size();
             }
-            res = std::max(res, tmp);
+            tmp1 = std::max(tmp1, tmp2);
         }
-    }
-    for (int u = 0; u < L_in.size(); u++) {
         for (auto s1 : L_in[u]) {
-            unsigned long long tmp = 0;
+            unsigned long long tmp2 = 0;
             for (int i = 0; i <= k; i++) {
-                tmp += s1[i].size();
+                tmp2 += s1[i].size();
             }
-            res = std::max(res, tmp);
+            tmp1 = std::max(tmp1, tmp2);
         }
+        res += tmp1;
     }
-    return res;
+    return double(res) / L_out.size();
 }
 
 int T2HIndex::find_index(std::vector<int> &L_neighbours, int u) {

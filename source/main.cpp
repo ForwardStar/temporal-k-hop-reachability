@@ -97,7 +97,7 @@ int main(int argc, char* argv[]) {
         unsigned long long index_construction_end_time = currentTime();
         std::cout << "Index construction completed in " << timeFormatting(difftime(index_construction_end_time, index_construction_start_time)).str() << std::endl;
         std::cout << "Number of paths in index: " << index->size() << std::endl;
-        std::cout << "Alpha: " << index->alpha << std::endl;
+        std::cout << "Average of alpha: " << index->alpha << std::endl;
         for (int i = 2; i < argc - 1; i++) {
             std::cout << "Solving queries..." << std::endl;
             unsigned long long query_start_time = currentTime();
@@ -117,7 +117,7 @@ int main(int argc, char* argv[]) {
         unsigned long long index_construction_end_time = currentTime();
         std::cout << "Index construction completed in " << timeFormatting(difftime(index_construction_end_time, index_construction_start_time)).str() << std::endl;
         std::cout << "Number of paths in index: " << index->size() << std::endl;
-        std::cout << "Beta: " << index->max_number_of_paths() << std::endl;
+        std::cout << "Average of beta: " << index->max_number_of_paths() << std::endl;
         for (int i = 2; i < argc - 1; i++) {
             std::cout << "Solving queries..." << std::endl;
             unsigned long long query_start_time = currentTime();

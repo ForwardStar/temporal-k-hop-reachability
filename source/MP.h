@@ -8,7 +8,7 @@ class MPIndex {
         std::vector<std::unordered_map<int, std::vector<std::vector<std::pair<int, int>>>>> L;
 
         int k = 0;
-        unsigned long long alpha = 0;
+        double alpha = 0;
 
         unsigned long long size();
 

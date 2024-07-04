@@ -49,6 +49,7 @@ bool MPIndex::reachable(TemporalGraph* G, int u, int v, int ts, int te, int k_in
 MPIndex::MPIndex(TemporalGraph* G, int k_input) {
     k = k_input;
     L.resize(G->n);
+    unsigned long long res = 0;
     
     // Index construction
     unsigned long long start_time = currentTime();
@@ -115,18 +116,22 @@ MPIndex::MPIndex(TemporalGraph* G, int k_input) {
             }
         }
 
+        unsigned long long tmp = 0;
         for (auto it = L[u].begin(); it != L[u].end();) {
             unsigned long long num_paths = 0;
             for (int j = 1; j <= k; j++) {
                 num_paths += (unsigned long long)it->second[j].size();
                 std::sort(it->second[j].begin(), it->second[j].end(), MP_cmp);
             }
-            alpha = std::max(num_paths, alpha);
+            tmp = std::max(num_paths, tmp);
             it++;
         }
+        res += tmp;
         
         putProcess(double(u + 1) / G->n, currentTime() - start_time);
     }
+
+    alpha = double(res) / G->n;
 }
 
 void MPIndex::solve(TemporalGraph* G, char* query_file, char* output_file) {
