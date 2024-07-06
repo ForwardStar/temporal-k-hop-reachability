@@ -117,14 +117,13 @@ MPIndex::MPIndex(TemporalGraph* G, int k_input) {
         }
 
         unsigned long long tmp = 0;
-        for (auto it = L[u].begin(); it != L[u].end();) {
+        for (auto it = L[u].begin(); it != L[u].end(); it++) {
             unsigned long long num_paths = 0;
             for (int j = 1; j <= k; j++) {
                 num_paths += (unsigned long long)it->second[j].size();
                 std::sort(it->second[j].begin(), it->second[j].end(), MP_cmp);
             }
             tmp = std::max(num_paths, tmp);
-            it++;
         }
         res += tmp;
         

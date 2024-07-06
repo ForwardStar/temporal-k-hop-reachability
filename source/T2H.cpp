@@ -32,24 +32,27 @@ unsigned long long T2HIndex::size() {
 }
 
 double T2HIndex::max_number_of_paths() {
+    std::vector<unsigned long long> max_number_of_paths;
+    max_number_of_paths.resize(L_out.size());
+    for (int u = 0; u < L_out.size(); u++) {
+        for (int i = 0; i < L_out_neighbours[u].size(); i++) {
+            unsigned long long tmp = 0;
+            for (int j = 0; j <= k; j++) {
+                tmp += L_out[u][i][j].size();
+            }
+            max_number_of_paths[u] = std::max(max_number_of_paths[u], tmp);
+        }
+        for (int i = 0; i < L_in_neighbours[u].size(); i++) {
+            unsigned long long tmp = 0;
+            for (int j = 0; j <= k; j++) {
+                tmp += L_in[u][i][j].size();
+            }
+            max_number_of_paths[L_in_neighbours[u][i]] = std::max(max_number_of_paths[L_in_neighbours[u][i]], tmp);
+        }
+    }
     unsigned long long res = 0;
     for (int u = 0; u < L_out.size(); u++) {
-        unsigned long long tmp1 = 0;
-        for (auto s1 : L_out[u]) {
-            unsigned long long tmp2 = 0;
-            for (int i = 0; i <= k; i++) {
-                tmp2 += s1[i].size();
-            }
-            tmp1 = std::max(tmp1, tmp2);
-        }
-        for (auto s1 : L_in[u]) {
-            unsigned long long tmp2 = 0;
-            for (int i = 0; i <= k; i++) {
-                tmp2 += s1[i].size();
-            }
-            tmp1 = std::max(tmp1, tmp2);
-        }
-        res += tmp1;
+        res += max_number_of_paths[u];
     }
     return double(res) / L_out.size();
 }
