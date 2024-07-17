@@ -93,23 +93,41 @@ def move_data_file(source, graph_type, destination):
     destination.writelines(output)
     destination.close()
 
-def normalize(filename):
+def normalize(filename, increasing=True):
     lines = open(filename, "r").readlines()
     contents = list()
+    nodes = dict()
 
     for line in lines:
         # omit the comments
-        if '%' in line:
+        if '%' in line or '#' in line:
             continue
         
         # omit the multiplicity of edges
         line = line.split()
-        contents.append([line[0], line[1], int(float(line[len(line) - 1]))])
+        if increasing:
+            contents.append([line[0], line[1], int(float(line[len(line) - 1]))])
+        else:
+            contents.append([line[0], line[1], -int(float(line[len(line) - 1]))])
+        if line[0] not in nodes:
+            nodes[line[0]] = 1
+        if line[1] not in nodes:
+            nodes[line[1]] = 1
     
-    # normalize
+    # normalize nodes
+    node_id = 0
+    for k in nodes.keys():
+        nodes[k] = node_id
+        node_id += 1
+
+    # normalize timestamps
     contents.sort(key=takeThird)
     contents[0].append(0)
+    contents[0][0] = str(nodes[contents[0][0]])
+    contents[0][1] = str(nodes[contents[0][1]])
     for i in range(1, len(contents)):
+        contents[i][0] = str(nodes[contents[i][0]])
+        contents[i][1] = str(nodes[contents[i][1]])
         if contents[i][2] == contents[i - 1][2]:
             contents[i].append(contents[i - 1][3])
         else:
@@ -125,7 +143,7 @@ if __name__ == "__main__":
     # download datasets
     DATASETS_URL = [("http://konect.cc/files/download.tsv.contact.tar.bz2", 'U'),
                     ("http://konect.cc/files/download.tsv.mit.tar.bz2", 'U'),
-                    ("http://konect.cc/files/download.tsv.facebook-wosn-links.tar.bz2", 'U'),
+                    ("https://snap.stanford.edu/data/cit-Patents.txt.gz", 'D'),
                     ("http://konect.cc/files/download.tsv.youtube-u-growth.tar.bz2", 'U'),
                     ("http://konect.cc/files/download.tsv.soc-sign-bitcoinotc.tar.bz2", 'D'),
                     ("https://snap.stanford.edu/data/email-Eu-core-temporal.txt.gz", 'D'),
