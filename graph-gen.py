@@ -228,6 +228,9 @@ if __name__ == "__main__":
     thread_normalize = threading.Thread(target=showProcess)
     thread_normalize.start()
     if int(user_input) != 0:
-        normalize("graph.txt")
+        if file_ls[int(user_input) - 1] == 'cit-Patents.txt':
+            normalize("graph.txt", False)
+        else:
+            normalize("graph.txt")
     is_finished = True
     thread_normalize.join()
