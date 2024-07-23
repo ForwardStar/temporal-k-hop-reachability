@@ -3,7 +3,6 @@
 
 class T2HIndex {
     private:
-        std::unordered_set<int> affected_vertices;
         std::pair<int, int> null_interval = std::make_pair(-1, -1);
 
         int find_index(std::vector<int> &L_neighbours, int u);

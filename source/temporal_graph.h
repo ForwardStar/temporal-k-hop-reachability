@@ -73,6 +73,12 @@ class TemporalGraph {
         // updateInfo(): update the number of edges.
         void updateInfo();
 
+        // addInEdge(u, v, t): add only an in-edge (v, u, t) to the graph.
+        void addInEdge(int u, int v, int t, bool repeat=true);
+
+        // addOutEdge(u, v, t): add only an out-edge (u, v, t) to the graph.
+        void addOutEdge(int u, int v, int t, bool repeat=true);
+
         // addEdge(u, v, t): add an edge (u, v, t) to the graph.
         void addEdge(int u, int v, int t, bool repeat=true);
         

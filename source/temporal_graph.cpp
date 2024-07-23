@@ -21,6 +21,7 @@ TemporalGraph::Edge* TemporalGraph::getNextEdge(Edge* e) {
 }
 
 TemporalGraph::Edge* TemporalGraph::deleteEdge(Edge* e) {
+    m--;
     int u = e->from;
     if (head_edge[u] == e) {
         head_edge[u] = e->next;
@@ -56,8 +57,18 @@ void TemporalGraph::updateInfo() {
     }
 }
 
-void TemporalGraph::addEdge(int u, int v, int t, bool repeat) {
-    m++;
+void TemporalGraph::addInEdge(int u, int v, int t, bool repeat) {
+    in_degree[u]++;
+    if (head_in_edge[u]) {
+        head_in_edge[u]->last = new Edge(u, v, t, head_in_edge[u]);
+        head_in_edge[u] = head_in_edge[u]->last;
+    }
+    else {
+        head_in_edge[u] = new Edge(u, v, t, nullptr);
+    }
+}
+
+void TemporalGraph::addOutEdge(int u, int v, int t, bool repeat) {
     degree[u]++;
     if (head_edge[u]) {
         head_edge[u]->last = new Edge(u, v, t, head_edge[u]);
@@ -66,14 +77,12 @@ void TemporalGraph::addEdge(int u, int v, int t, bool repeat) {
     else {
         head_edge[u] = new Edge(u, v, t, nullptr);
     }
-    in_degree[v]++;
-    if (head_in_edge[v]) {
-        head_in_edge[v]->last = new Edge(v, u, t, head_in_edge[v]);
-        head_in_edge[v] = head_in_edge[v]->last;
-    }
-    else {
-        head_in_edge[v] = new Edge(v, u, t, nullptr);
-    }
+}
+
+void TemporalGraph::addEdge(int u, int v, int t, bool repeat) {
+    m++;
+    addInEdge(v, u, t);
+    addOutEdge(u, v, t);
 }
 
 TemporalGraph* TemporalGraph::projectedGraph(int ts, int te) {
