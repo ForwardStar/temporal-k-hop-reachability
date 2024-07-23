@@ -3,7 +3,6 @@
 
 class T2HIndex {
     private:
-        std::vector<std::set<std::pair<int, int>>> minimal_intervals;
         std::unordered_set<int> affected_vertices;
         std::pair<int, int> null_interval = std::make_pair(-1, -1);
 
