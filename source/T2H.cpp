@@ -236,9 +236,29 @@ void T2HIndex::construct_for_a_vertex(TemporalGraph* G, int u, bool reverse) {
                     L[w].push_back(std::vector<std::vector<std::pair<int, int>>>());
                     L[w][L[w].size() - 1].resize(k + 1);
                     L_neighbours[w].push_back(u);
+                    affected_vertices.insert(w);
+                }
+                auto it = minimal_intervals[w].begin();
+                if (!reverse) {
+                    it = minimal_intervals[w].lower_bound(std::make_pair(-t, 0));
+                    if (it != minimal_intervals[w].end() && it->first == -t && it->second == t) {
+                        continue;
+                    }
+                }
+                else {
+                    it = minimal_intervals[w].lower_bound(std::make_pair(t, 0)); 
+                    if (it != minimal_intervals[w].end() && it->first == t && it->second == t) {
+                        continue;
+                    }
                 }
                 Q[(d + 1) % 2].insert(w);
                 L[w][L[w].size() - 1][1].push_back(std::make_pair(t, t));
+                if (!reverse) {
+                    minimal_intervals[w].insert(std::make_pair(-t, t));
+                }
+                else {
+                    minimal_intervals[w].insert(std::make_pair(t, t));
+                }
                 continue;
             }
             auto interval = reverse ? binary_search_ts_Lout(v, L[v].size() - 1, d, t) : binary_search_te_Lin(v, L[v].size() - 1, d, t);
@@ -246,6 +266,34 @@ void T2HIndex::construct_for_a_vertex(TemporalGraph* G, int u, bool reverse) {
                 int ts = interval.first, te = t;
                 if (reverse) {
                     ts = t, te = interval.second;
+                }
+                auto it = minimal_intervals[w].begin();
+                if (!reverse) {
+                    it = minimal_intervals[w].lower_bound(std::make_pair(-te, 0));
+                    if (it != minimal_intervals[w].end() && it->second >= ts) {
+                        continue;
+                    }
+                }
+                else {
+                    it = minimal_intervals[w].lower_bound(std::make_pair(ts, 0));
+                    if (it != minimal_intervals[w].end() && it->second <= te) {
+                        continue;
+                    }
+                }
+                if (it != minimal_intervals[w].end()) {
+                    affected_vertices.insert(w);
+                    if (!reverse) {
+                        if (it->second == te) {
+                            minimal_intervals[w].erase(it);
+                        }
+                        minimal_intervals[w].insert(std::make_pair(-te, ts));
+                    }
+                    else {
+                        if (it->first == ts) {
+                            minimal_intervals[w].erase(it);
+                        }
+                        minimal_intervals[w].insert(std::make_pair(ts, te));
+                    }
                 }
                 if ((!reverse && !reachable(u, w, ts, te, d + 1)) || (reverse && !reachable(w, u, ts, te, d + 1))) {
                     Q[(d + 1) % 2].insert(w);
@@ -275,6 +323,11 @@ void T2HIndex::construct_for_a_vertex(TemporalGraph* G, int u, bool reverse) {
 
         Q[d % 2].clear();
     }
+
+    for (int v : affected_vertices) {
+        minimal_intervals[v].clear();
+    }
+    affected_vertices.clear();
 }
 
 T2HIndex::T2HIndex(TemporalGraph* G, int k_input) {
@@ -283,6 +336,7 @@ T2HIndex::T2HIndex(TemporalGraph* G, int k_input) {
     L_out.resize(G->n);
     L_in_neighbours.resize(G->n);
     L_out_neighbours.resize(G->n);
+    minimal_intervals.resize(G->n);
 
     std::vector<std::pair<int, long long>> vertex_set;
     for (int u = 0; u < G->n; u++) {
