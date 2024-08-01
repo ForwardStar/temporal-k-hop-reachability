@@ -219,10 +219,6 @@ void T2HIndex::construct_for_a_vertex(TemporalGraph* G, int u, bool reverse) {
                 if (order[e->to] > order[u]) {
                     edge_set.push_back(std::make_pair(std::make_pair(v, e->to), e->interaction_time));
                 }
-                else {
-                    e = G->deleteEdge(e);
-                    continue;
-                }
                 e = G->getNextEdge(e);
             }
         }
