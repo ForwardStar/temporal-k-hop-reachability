@@ -2,7 +2,6 @@
 #include "temporal_graph.h"
 #include "online1.h"
 #include "online2.h"
-#include "naive.h"
 #include "MP.h"
 #include "T2H.h"
 
@@ -39,7 +38,7 @@ int main(int argc, char* argv[]) {
     else {
         std::cout << "Input kmax: ";
         std::cin >> k;
-        std::cout << "Input the solution to be used (Online1/Online2/Naive/MP/T2H): ";
+        std::cout << "Input the solution to be used (Online1/Online2/MP/T2H): ";
         std::cin >> sol_type;
     }
 
@@ -66,25 +65,6 @@ int main(int argc, char* argv[]) {
             online2(Graph, argv[i], argv[argc - 1]);
             unsigned long long online_search_end_time = currentTime();
             std::cout << "Online search completed in " << timeFormatting(online_search_end_time - online_search_start_time).str() << std::endl;
-        }
-        delete Graph;
-    }
-
-    if (sol_type == "Naive") {
-        std::cout << "Running index..." << std::endl;
-        std::cout << "Constructing the index structure..." << std::endl;
-        unsigned long long index_construction_start_time = currentTime();
-        NaiveIndex *index = new NaiveIndex(Graph, k, t_threshold, path_type);
-        unsigned long long index_construction_end_time = currentTime();
-        std::cout << "Index construction completed in " << timeFormatting(difftime(index_construction_end_time, index_construction_start_time)).str() << std::endl;
-        std::cout << "Number of paths in index: " << index->size() << std::endl;
-        for (int i = 2; i < argc - 1; i++) {
-            std::cout << "Solving queries..." << std::endl;
-            unsigned long long query_start_time = currentTime();
-            index->solve(Graph, argv[i], argv[argc - 1]);
-            unsigned long long query_end_time = currentTime();
-            std::cout << "Query completed in " << timeFormatting(query_end_time - query_start_time).str() << std::endl;
-            std::cout << "Index completed!" << std::endl;
         }
         delete Graph;
     }

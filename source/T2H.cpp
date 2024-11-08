@@ -211,15 +211,10 @@ void T2HIndex::construct_for_a_vertex(TemporalGraph* G, int u, bool reverse) {
     for (int d = 0; d < k; d++) {
         edge_set.clear();
         for (int v : Q[d % 2]) {
-            auto e = G->getHeadEdge(v);
-            if (reverse) {
-                e = G->getHeadInEdge(v);
-            }
-            while (e) {
-                if (order[e->to] > order[u]) {
-                    edge_set.push_back(std::make_pair(std::make_pair(v, e->to), e->interaction_time));
+            for (auto e : (!reverse ? G->neighbors[v] : G->in_neighbors[v])) {
+                if (order[e.first] > order[u]) {
+                    edge_set.emplace_back(std::make_pair(std::make_pair(v, e.first), e.second));
                 }
-                e = G->getNextEdge(e);
             }
         }
 
@@ -229,13 +224,13 @@ void T2HIndex::construct_for_a_vertex(TemporalGraph* G, int u, bool reverse) {
             int v = e.first.first, w = e.first.second, t = e.second;
             if (u == v) {
                 if (L_neighbours[w].size() == 0 || L_neighbours[w][L[w].size() - 1] != u) {
-                    L[w].push_back(std::vector<std::vector<std::pair<int, int>>>());
+                    L[w].emplace_back(std::vector<std::vector<std::pair<int, int>>>());
                     L[w][L[w].size() - 1].resize(k + 1);
-                    L_neighbours[w].push_back(u);
+                    L_neighbours[w].emplace_back(u);
                 }
                 Q[(d + 1) % 2].insert(w);
-                if (!reachable(u, w, t, t, 1)) {
-                    L[w][L[w].size() - 1][1].push_back(std::make_pair(t, t));
+                if (!reverse ? !reachable(u, w, t, t, 1) : !reachable(w, u, t, t, 1)) {
+                    L[w][L[w].size() - 1][1].emplace_back(std::make_pair(t, t));
                 }
                 continue;
             }
@@ -248,9 +243,9 @@ void T2HIndex::construct_for_a_vertex(TemporalGraph* G, int u, bool reverse) {
                 if ((!reverse && !reachable(u, w, ts, te, d + 1)) || (reverse && !reachable(w, u, ts, te, d + 1))) {
                     Q[(d + 1) % 2].insert(w);
                     if (L_neighbours[w].size() == 0 || L_neighbours[w][L[w].size() - 1] != u) {
-                        L[w].push_back(std::vector<std::vector<std::pair<int, int>>>());
+                        L[w].emplace_back(std::vector<std::vector<std::pair<int, int>>>());
                         L[w][L[w].size() - 1].resize(k + 1);
-                        L_neighbours[w].push_back(u);
+                        L_neighbours[w].emplace_back(u);
                     }
                     if (!reverse) {
                         auto& interval1 = binary_search_te_Lin(w, L[w].size() - 1, d + 1, te);
@@ -266,7 +261,7 @@ void T2HIndex::construct_for_a_vertex(TemporalGraph* G, int u, bool reverse) {
                             continue;
                         }
                     }
-                    L[w][L[w].size() - 1][d + 1].push_back(std::make_pair(ts, te));
+                    L[w][L[w].size() - 1][d + 1].emplace_back(std::make_pair(ts, te));
                 }
             }
         }
@@ -284,7 +279,7 @@ T2HIndex::T2HIndex(TemporalGraph* G, int k_input) {
 
     std::vector<std::pair<int, long long>> vertex_set;
     for (int u = 0; u < G->n; u++) {
-        vertex_set.push_back(std::make_pair(u, ((long long)G->in_degree[u] + 1) * (G->degree[u] + 1)));
+        vertex_set.emplace_back(std::make_pair(u, ((long long)G->in_degree[u] + 1) * (G->degree[u] + 1)));
     }
     std::sort(vertex_set.begin(), vertex_set.end(), cmp_degree);
     order = new int[G->n];

@@ -79,9 +79,8 @@ MPIndex::MPIndex(TemporalGraph* G, int k_input) {
                 // Only minimal k-hop paths are expanded
                 continue;
             }
-            TemporalGraph::Edge* e = G->getHeadEdge(v);
-            while (e) {
-                int w = e->to, t = e->interaction_time;
+            for (auto e : G->neighbors[v]) {
+                int w = e.first, t = e.second;
                 if (w != u && te <= t) {
                     int ts_new = std::min(ts, t), te_new = std::max(te, t);
                     if (L[u].find(w) == L[u].end()) {
@@ -108,11 +107,10 @@ MPIndex::MPIndex(TemporalGraph* G, int k_input) {
                             }
                             it++;
                         }
-                        L[u][w][d + 1].push_back(std::make_pair(ts_new, te_new));
+                        L[u][w][d + 1].emplace_back(std::make_pair(ts_new, te_new));
                         Q.push(std::vector<int>{w, ts_new, te_new, d + 1});
                     }
                 }
-                e = G->getNextEdge(e);
             }
         }
 

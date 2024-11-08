@@ -31,17 +31,18 @@ std::string onlineSearch2(TemporalGraph* Graph, int s, int t, int ts, int te, in
         while (!Q.empty()) {
             int u = Q.top().first;
             Q.pop();
-            auto e = G->getHeadEdge(u);
-            while (e) {
-                if (f[u] + 1 < f[e->to]) {
-                    f[e->to] = f[u] + 1;
-                    Q.push(std::make_pair(e->to, f[e->to]));
+            for (auto e : G->neighbors[u]) {
+                if (f[u] + 1 < f[e.first]) {
+                    f[e.first] = f[u] + 1;
+                    Q.push(std::make_pair(e.first, f[e.first]));
                 }
-                auto e_next = G->getNextEdge(e);
-                delete e;
-                G->head_edge[u] = e_next;
-                e = e_next;
             }
+        }
+        for (auto e : Graph->temporal_edge[i]) {
+            G->neighbors[e.first].clear();
+            G->in_neighbors[e.second].clear();
+            G->degree[e.first] = 0;
+            G->in_degree[e.second] = 0;
         }
     }
     delete G;

@@ -20,19 +20,16 @@ std::string onlineSearch1(TemporalGraph* Graph, int s, int t, int ts, int te, in
         if (dis >= k) {
             break;
         }
-        TemporalGraph::Edge* edge = G->getHeadEdge(u);
-        while (edge) {
-            if (edge->interaction_time >= T[edge->to] || te > edge->interaction_time) {
-                edge = G->getNextEdge(edge);
+        for (auto e : G->neighbors[u]) {
+            if (e.second >= T[e.first] || te > e.second) {
                 continue;
             }
-            if (edge->to == t) {
+            if (e.first == t) {
                 delete G;
                 return "Reachable";
             }
-            T[edge->to] = std::min(T[edge->to], edge->interaction_time);
-            Q.push(std::vector<int>{edge->to, dis + 1, edge->interaction_time});
-            edge = G->getNextEdge(edge);
+            T[e.first] = std::min(T[e.first], e.second);
+            Q.push(std::vector<int>{e.first, dis + 1, e.second});
         }
     }
 
