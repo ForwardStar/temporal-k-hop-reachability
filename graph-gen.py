@@ -144,7 +144,7 @@ if __name__ == "__main__":
     DATASETS_URL = [("http://konect.cc/files/download.tsv.contact.tar.bz2", 'U'),
                     ("http://konect.cc/files/download.tsv.mit.tar.bz2", 'U'),
                     ("https://snap.stanford.edu/data/cit-Patents.txt.gz", 'D'),
-                    ("http://konect.cc/files/download.tsv.youtube-u-growth.tar.bz2", 'U'),
+                    ("http://konect.cc/files/download.tsv.link-dynamic-nlwiki.tar.bz2", 'D'),
                     ("http://konect.cc/files/download.tsv.soc-sign-bitcoinotc.tar.bz2", 'D'),
                     ("https://snap.stanford.edu/data/email-Eu-core-temporal.txt.gz", 'D'),
                     ("https://snap.stanford.edu/data/CollegeMsg.txt.gz", 'D'),
